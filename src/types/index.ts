@@ -117,3 +117,23 @@ export interface RecordVersion {
   snapshot: BoxRecord;
   savedAt: string;
 }
+
+export type BadgeCategory = 'records' | 'categories' | 'tools' | 'materials' | 'features';
+
+export interface BadgeDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: BadgeCategory;
+  condition: string;
+  tier: 'bronze' | 'silver' | 'gold' | 'diamond';
+}
+
+export interface BadgeStatus {
+  badge: BadgeDefinition;
+  earned: boolean;
+  earnedAt: string | null;
+  progress: number;
+  target: number;
+}

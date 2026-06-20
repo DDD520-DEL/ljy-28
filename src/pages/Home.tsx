@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench, Trophy } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
+import { useAchievements } from '@/hooks/useAchievements';
 import StatCard from '@/components/StatCard';
 import TrendChart from '@/components/TrendChart';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -31,6 +32,8 @@ export default function Home() {
     syncConflicts,
     clearConflicts,
   } = useBoxStore();
+
+  const { earnedCount, totalCount } = useAchievements();
 
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -249,6 +252,30 @@ export default function Home() {
             delay={400}
           />
         </section>
+
+        <button
+          onClick={() => navigate('/achievements')}
+          className="w-full mb-10 card-kraft p-4 flex items-center gap-4 hover:shadow-paper-hover hover:-translate-y-0.5 transition-all duration-200 text-left group"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-paper-sm flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+            <Trophy className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-bold text-kraft-800 mb-0.5">我的成就</h3>
+            <p className="text-sm text-kraft-500">
+              已解锁 <span className="font-semibold text-kraft-700">{earnedCount}</span>/{totalCount} 枚徽章
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-20 bg-kraft-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700"
+                style={{ width: `${totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0}%` }}
+              />
+            </div>
+            <span className="text-xs text-kraft-400 group-hover:text-kraft-600 transition-colors">›</span>
+          </div>
+        </button>
 
         <TrendChart />
 

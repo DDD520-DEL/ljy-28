@@ -7,6 +7,7 @@ import Discover from "@/pages/Discover";
 import Settings from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
 import BoxSizeRecommender from "@/pages/BoxSizeRecommender";
+import Achievements from "@/pages/Achievements";
 import { ToastContainer } from "@/components/Toast";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
@@ -57,6 +58,7 @@ function AppContent() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/" element={<Home />} />
         <Route path="/box-size-recommender" element={<BoxSizeRecommender />} />
+        <Route path="/achievements" element={<Achievements />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/record" element={<Record />} />
         <Route path="/record/:id" element={<Record />} />
