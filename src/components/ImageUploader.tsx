@@ -29,6 +29,7 @@ export default function ImageUploader({
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -39,9 +40,11 @@ export default function ImageUploader({
 
       const originalSizeKB = file.size / 1024;
       setOriginalSize(originalSizeKB);
+      setOriginalImageSrc(null);
 
       try {
         const base64 = await fileToBase64(file);
+        setOriginalImageSrc(base64);
         setCropImageSrc(base64);
       } catch {
         toast.error('图片读取失败，请换一张图片试试');
@@ -52,13 +55,13 @@ export default function ImageUploader({
 
   const handleCropConfirm = useCallback(
     async (croppedAreaPixels: Area) => {
-      if (!cropImageSrc) return;
+      if (!originalImageSrc) return;
 
       setCropImageSrc(null);
       setIsCompressing(true);
 
       try {
-        const compressed = await getCroppedImage(cropImageSrc, croppedAreaPixels, {
+        const compressed = await getCroppedImage(originalImageSrc, croppedAreaPixels, {
           maxWidth: 800,
           maxHeight: 800,
           quality: 0.7,
@@ -88,15 +91,18 @@ export default function ImageUploader({
         setIsCompressing(false);
       }
     },
-    [cropImageSrc, onChange, maxSizeKB, originalSize]
+    [originalImageSrc, onChange, maxSizeKB, originalSize]
   );
 
   const handleCropCancel = useCallback(() => {
     setCropImageSrc(null);
+    if (!value) {
+      setOriginalImageSrc(null);
+    }
     if (inputRef.current) {
       inputRef.current.value = '';
     }
-  }, []);
+  }, [value]);
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -137,6 +143,7 @@ export default function ImageUploader({
     onChange('');
     setOriginalSize(null);
     setCompressedSize(null);
+    setOriginalImageSrc(null);
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -144,8 +151,12 @@ export default function ImageUploader({
 
   const handleRecrop = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (value) {
-      setCropImageSrc(value);
+    const source = originalImageSrc || value;
+    if (source) {
+      if (!originalImageSrc) {
+        toast.warning('当前图片无原图，重新裁剪可能损失画质');
+      }
+      setCropImageSrc(source);
     }
   };
 
