@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_LABELS } from '@/constants';
 import { formatDateRelative } from '@/utils';
-import { Ruler, Layers, ArrowRight, Star, Wrench } from 'lucide-react';
+import { Ruler, Layers, ArrowRight, Star, Wrench, Check } from 'lucide-react';
 import type { BoxRecord } from '@/types';
 import { cn } from '@/lib/utils';
 import { useBoxStore } from '@/store/useBoxStore';
@@ -10,15 +10,22 @@ interface IdeaCardProps {
   record: BoxRecord;
   index?: number;
   className?: string;
+  isManageMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
 }
 
-export default function IdeaCard({ record, index = 0, className }: IdeaCardProps) {
+export default function IdeaCard({ record, index = 0, className, isManageMode = false, isSelected = false, onSelect }: IdeaCardProps) {
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useBoxStore();
   const categoryLabel = CATEGORY_LABELS[record.category];
   const favorited = isFavorite(record.id);
 
   const handleClick = () => {
+    if (isManageMode) {
+      onSelect?.(record.id);
+      return;
+    }
     navigate(`/detail/${record.id}`);
   };
 
@@ -27,16 +34,36 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
     toggleFavorite(record.id);
   };
 
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect?.(record.id);
+  };
+
   return (
     <div
       onClick={handleClick}
       className={cn(
-        'card-paper cursor-pointer group opacity-0 animate-fade-in-up',
+        'card-paper cursor-pointer group opacity-0 animate-fade-in-up relative',
         'hover:shadow-paper-hover hover:-translate-y-1 transition-all duration-300',
+        isManageMode && isSelected && 'ring-2 ring-kraft-400 shadow-paper-hover',
         className
       )}
       style={{ animationDelay: `${index * 80}ms` }}
     >
+      {isManageMode && (
+        <div
+          onClick={handleCheckboxClick}
+          className={cn(
+            'absolute top-3 left-3 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 cursor-pointer',
+            isSelected
+              ? 'bg-kraft-500 border-kraft-500 text-white'
+              : 'bg-white/90 border-kraft-300 backdrop-blur-sm hover:border-kraft-400'
+          )}
+        >
+          {isSelected && <Check className="w-3.5 h-3.5" />}
+        </div>
+      )}
+
       <div className="relative overflow-hidden aspect-[4/3] bg-kraft-100">
         <img
           src={record.afterImage}
@@ -49,7 +76,7 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
             {categoryLabel}
           </span>
         </div>
-        {favorited && (
+        {!isManageMode && favorited && (
           <button
             onClick={handleFavoriteClick}
             className="absolute top-3 right-3 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-kraft-100 text-amber-500 hover:bg-white transition-colors"
@@ -58,7 +85,7 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
             <Star className="w-4 h-4 fill-current" />
           </button>
         )}
-        {!favorited && (
+        {!isManageMode && !favorited && (
           <button
             onClick={handleFavoriteClick}
             className="absolute top-3 right-3 p-1.5 rounded-full bg-white/0 backdrop-blur-sm shadow-sm border border-transparent text-transparent group-hover:bg-white/90 group-hover:text-kraft-400 group-hover:border-kraft-100 hover:text-amber-500 transition-all duration-300"
@@ -68,12 +95,14 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
           </button>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-kraft-700 shadow-md">
-            查看详情
-            <ArrowRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
+        {!isManageMode && (
+          <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-kraft-700 shadow-md">
+              查看详情
+              <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-4">

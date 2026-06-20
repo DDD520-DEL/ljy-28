@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import StatCard from '@/components/StatCard';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -9,8 +9,12 @@ import type { CategoryType } from '@/types';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { records, currentCategory, searchKeyword, setCategory, setSearchKeyword, getStats, init, isLoaded, favorites } =
+  const { records, currentCategory, searchKeyword, setCategory, setSearchKeyword, getStats, init, isLoaded, favorites, batchDeleteRecords } =
     useBoxStore();
+
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -52,6 +56,49 @@ export default function Home() {
   const handleCategoryChange = (category: CategoryType | 'all' | 'favorites') => {
     setCategory(category);
   };
+
+  const enterManageMode = () => {
+    setIsManageMode(true);
+    setSelectedIds(new Set());
+  };
+
+  const exitManageMode = () => {
+    setIsManageMode(false);
+    setSelectedIds(new Set());
+    setShowConfirmDialog(false);
+  };
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredRecords.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredRecords.map((r) => r.id)));
+    }
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.size === 0) return;
+    setShowConfirmDialog(true);
+  };
+
+  const confirmBatchDelete = () => {
+    batchDeleteRecords(Array.from(selectedIds));
+    exitManageMode();
+  };
+
+  const isAllSelected = filteredRecords.length > 0 && selectedIds.size === filteredRecords.length;
 
   return (
     <div className="min-h-screen bg-paper-cream">
@@ -154,9 +201,22 @@ export default function Home() {
             <h2 className="text-xl font-bold font-display text-kraft-800">
               创意灵感
             </h2>
-            <span className="text-sm text-kraft-400">
-              共 {filteredRecords.length} 个作品
-            </span>
+            <div className="flex items-center gap-3">
+              {filteredRecords.length > 0 && !isManageMode && (
+                <button
+                  onClick={enterManageMode}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-kraft-600 bg-kraft-100 rounded-lg hover:bg-kraft-200 transition-colors"
+                >
+                  <Settings2 className="w-4 h-4" />
+                  管理
+                </button>
+              )}
+              {!isManageMode && (
+                <span className="text-sm text-kraft-400">
+                  共 {filteredRecords.length} 个作品
+                </span>
+              )}
+            </div>
           </div>
 
           <CategoryTabs
@@ -166,10 +226,56 @@ export default function Home() {
           />
         </section>
 
+        {isManageMode && (
+          <div className="sticky top-0 z-30 mb-4 animate-fade-in-up">
+            <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur-sm rounded-2xl shadow-paper border border-kraft-100">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={toggleSelectAll}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-kraft-700 hover:text-kraft-800 transition-colors"
+                >
+                  {isAllSelected ? (
+                    <CheckSquare className="w-5 h-5 text-kraft-500" />
+                  ) : (
+                    <Square className="w-5 h-5 text-kraft-400" />
+                  )}
+                  {isAllSelected ? '取消全选' : '全选'}
+                </button>
+                <span className="text-sm text-kraft-500">
+                  已选择 <span className="font-semibold text-kraft-700">{selectedIds.size}</span> 项
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={selectedIds.size === 0}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  批量删除
+                </button>
+                <button
+                  onClick={exitManageMode}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-kraft-600 bg-kraft-100 rounded-lg hover:bg-kraft-200 transition-colors"
+                >
+                  完成
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {filteredRecords.length > 0 ? (
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredRecords.map((record, index) => (
-              <IdeaCard key={record.id} record={record} index={index} />
+              <IdeaCard
+                key={record.id}
+                record={record}
+                index={index}
+                isManageMode={isManageMode}
+                isSelected={selectedIds.has(record.id)}
+                onSelect={toggleSelect}
+              />
             ))}
           </section>
         ) : searchKeyword ? (
@@ -243,6 +349,37 @@ export default function Home() {
       <footer className="py-8 text-center text-sm text-kraft-400 border-t border-kraft-100">
         <p>🌿 纸箱二次利用 · 让环保成为一种生活方式</p>
       </footer>
+
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowConfirmDialog(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 animate-fade-in-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-kraft-800">确认删除</h3>
+            </div>
+            <p className="text-sm text-kraft-600 mb-6">
+              确定要删除选中的 <span className="font-semibold text-red-600">{selectedIds.size}</span> 条记录吗？此操作不可撤销。
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="px-4 py-2 text-sm font-medium text-kraft-600 bg-kraft-100 rounded-lg hover:bg-kraft-200 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmBatchDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

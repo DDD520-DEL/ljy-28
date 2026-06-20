@@ -16,6 +16,7 @@ interface BoxStore {
   addRecord: (record: Omit<BoxRecord, 'id' | 'createdAt' | 'updatedAt'>) => boolean;
   updateRecord: (id: string, record: Partial<BoxRecord>) => boolean;
   deleteRecord: (id: string) => void;
+  batchDeleteRecords: (ids: string[]) => void;
   getRecordById: (id: string) => BoxRecord | undefined;
   setCategory: (category: CategoryType | 'all' | 'favorites') => void;
   setSearchKeyword: (keyword: string) => void;
@@ -120,6 +121,26 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         toast.warning('记录已从列表移除，但存储更新异常');
       } else {
         toast.error('删除失败，请重试');
+      }
+    }
+  },
+
+  batchDeleteRecords: (ids) => {
+    const idSet = new Set(ids);
+    const newRecords = get().records.filter((r) => !idSet.has(r.id));
+    const newFavorites = get().favorites.filter((fid) => !idSet.has(fid));
+
+    try {
+      saveToStorage(STORAGE_KEY, newRecords);
+      saveToStorage(FAVORITES_STORAGE_KEY, newFavorites);
+      set({ records: newRecords, favorites: newFavorites });
+      toast.success(`已删除 ${ids.length} 条记录`);
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        set({ records: newRecords, favorites: newFavorites });
+        toast.warning('记录已从列表移除，但存储更新异常');
+      } else {
+        toast.error('批量删除失败，请重试');
       }
     }
   },
