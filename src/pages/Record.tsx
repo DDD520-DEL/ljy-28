@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Trash2, Package, Ruler, Layers, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Package, Ruler, Layers, CheckCircle, Wrench } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORIES, COMPLETENESS_OPTIONS, CORRUGATE_LAYERS } from '@/constants';
 import ImageUploader from '@/components/ImageUploader';
 import { toast } from '@/components/Toast';
-import type { CategoryType, CompletenessType, BoxRecord } from '@/types';
+import type { CategoryType, CompletenessType, BoxRecord, MaterialItem } from '@/types';
 import { cn } from '@/lib/utils';
 
 export default function Record() {
@@ -27,6 +27,7 @@ export default function Record() {
     completeness: 'good' as CompletenessType,
     expressSource: '',
     steps: [''] as string[],
+    materials: [] as MaterialItem[],
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function Record() {
           completeness: record.completeness,
           expressSource: record.expressSource,
           steps: record.steps.length > 0 ? record.steps : [''],
+          materials: record.materials || [],
         });
       } else {
         navigate('/');
@@ -79,6 +81,24 @@ export default function Record() {
     setFormData((prev) => ({ ...prev, steps: newSteps }));
   };
 
+  const addMaterial = () => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: [...prev.materials, { name: '', quantity: 1, unit: '' }],
+    }));
+  };
+
+  const removeMaterial = (index: number) => {
+    const newMaterials = formData.materials.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, materials: newMaterials }));
+  };
+
+  const handleMaterialChange = (index: number, field: keyof MaterialItem, value: string | number) => {
+    const newMaterials = [...formData.materials];
+    newMaterials[index] = { ...newMaterials[index], [field]: value };
+    setFormData((prev) => ({ ...prev, materials: newMaterials }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -88,10 +108,12 @@ export default function Record() {
     }
 
     const validSteps = formData.steps.filter((s) => s.trim() !== '');
+    const validMaterials = formData.materials.filter((m) => m.name.trim() !== '');
 
     const recordData = {
       ...formData,
       steps: validSteps,
+      materials: validMaterials,
     };
 
     let success = false;
@@ -341,6 +363,84 @@ export default function Record() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="card-paper p-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
+                  <Wrench className="w-5 h-5 text-teal-600" />
+                </div>
+                <h2 className="text-lg font-bold font-display text-kraft-800">
+                  所需材料
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={addMaterial}
+                className="text-sm text-kraft-500 hover:text-kraft-700 flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                添加材料
+              </button>
+            </div>
+
+            {formData.materials.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-kraft-400 text-sm mb-3">暂未添加材料</p>
+                <button
+                  type="button"
+                  onClick={addMaterial}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-50 text-teal-600 rounded-xl text-sm font-medium hover:bg-teal-100 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  添加第一项材料
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {formData.materials.map((material, index) => (
+                  <div key={index} className="flex gap-3 items-start">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-300 to-teal-400 text-white text-sm font-bold flex items-center justify-center flex-shrink-0 shadow-paper">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <input
+                        type="text"
+                        placeholder="材料名称"
+                        value={material.name}
+                        onChange={(e) => handleMaterialChange(index, 'name', e.target.value)}
+                        className="input-field"
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="数量"
+                        value={material.quantity}
+                        onChange={(e) => handleMaterialChange(index, 'quantity', Number(e.target.value))}
+                        className="input-field"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="单位"
+                          value={material.unit}
+                          onChange={(e) => handleMaterialChange(index, 'unit', e.target.value)}
+                          className="input-field flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeMaterial(index)}
+                          className="p-2 text-kraft-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="card-paper p-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>

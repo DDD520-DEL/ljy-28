@@ -11,6 +11,7 @@ import {
   CheckSquare,
   Calendar,
   Star,
+  Wrench,
 } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORY_LABELS, COMPLETENESS_LABELS } from '@/constants';
@@ -181,6 +182,31 @@ export default function Detail() {
               改造步骤
             </h2>
             <Timeline steps={timelineSteps} />
+          </section>
+        )}
+
+        {record.materials && record.materials.length > 0 && (
+          <section className="mb-8 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.45s' }}>
+            <h2 className="text-lg font-bold font-display text-kraft-800 mb-4 flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-teal-500" />
+              所需材料
+            </h2>
+            <div className="card-paper p-4">
+              <div className="space-y-2.5">
+                {record.materials.map((material, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2.5 rounded-xl bg-teal-50/60">
+                    <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Wrench className="w-4 h-4 text-teal-500" />
+                    </div>
+                    <span className="flex-1 text-sm font-medium text-kraft-700">{material.name}</span>
+                    <span className="text-sm text-kraft-500">
+                      {material.quantity}
+                      <span className="ml-0.5 text-xs text-kraft-400">{material.unit}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </section>
         )}
 

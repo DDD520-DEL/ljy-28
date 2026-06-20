@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_LABELS } from '@/constants';
 import { formatDateRelative } from '@/utils';
-import { Ruler, Layers, ArrowRight, Star } from 'lucide-react';
+import { Ruler, Layers, ArrowRight, Star, Wrench } from 'lucide-react';
 import type { BoxRecord } from '@/types';
 import { cn } from '@/lib/utils';
 import { useBoxStore } from '@/store/useBoxStore';
@@ -93,6 +93,12 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
               <Layers className="w-3.5 h-3.5" />
               {record.corrugateLayers}层
             </span>
+            {record.materials && record.materials.length > 0 && (
+              <span className="flex items-center gap-1">
+                <Wrench className="w-3.5 h-3.5" />
+                {record.materials.length}种材料
+              </span>
+            )}
           </div>
           <span>{formatDateRelative(record.createdAt)}</span>
         </div>

@@ -2,6 +2,12 @@ export type CategoryType = 'storage' | 'catHouse' | 'craft' | 'toy' | 'pot' | 'd
 
 export type CompletenessType = 'perfect' | 'good' | 'fair' | 'poor';
 
+export interface MaterialItem {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
 export interface BoxRecord {
   id: string;
   name: string;
@@ -16,6 +22,7 @@ export interface BoxRecord {
   completeness: CompletenessType;
   expressSource: string;
   steps: string[];
+  materials: MaterialItem[];
   createdAt: string;
   updatedAt: string;
 }

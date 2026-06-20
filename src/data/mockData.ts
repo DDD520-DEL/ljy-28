@@ -69,6 +69,11 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '外侧贴上牛皮纸胶带，增加质感',
       '底部加上硬纸板加固，承重更好'
     ],
+    materials: [
+      { name: '牛皮纸胶带', quantity: 2, unit: '卷' },
+      { name: '白乳胶', quantity: 1, unit: '瓶' },
+      { name: '硬纸板', quantity: 3, unit: '块' },
+    ],
     createdAt: daysAgo(2),
     updatedAt: daysAgo(2),
   },
@@ -91,6 +96,10 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '用胶带将两个纸箱连接起来',
       '内部铺上旧毛巾或毛衣增加舒适度',
       '顶部可以开个天窗，猫咪更爱钻'
+    ],
+    materials: [
+      { name: '宽胶带', quantity: 1, unit: '卷' },
+      { name: '旧毛衣', quantity: 1, unit: '件' },
     ],
     createdAt: daysAgo(5),
     updatedAt: daysAgo(5),
@@ -115,6 +124,10 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '底部垫上塑料布防止漏水',
       '放入小多肉，完美！'
     ],
+    materials: [
+      { name: '麻绳', quantity: 3, unit: '米' },
+      { name: '塑料布', quantity: 1, unit: '块' },
+    ],
     createdAt: daysAgo(7),
     updatedAt: daysAgo(7),
   },
@@ -137,6 +150,11 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '中间用松紧带或活页环连接',
       '内部贴上分类标签',
       '放入各种手账素材'
+    ],
+    materials: [
+      { name: '松紧带', quantity: 2, unit: '条' },
+      { name: '包装纸', quantity: 2, unit: '张' },
+      { name: '分类标签', quantity: 5, unit: '个' },
     ],
     createdAt: daysAgo(10),
     updatedAt: daysAgo(10),
@@ -161,6 +179,10 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '用乳胶漆或壁纸美化表面',
       '用无痕钉固定在墙上'
     ],
+    materials: [
+      { name: '乳胶漆', quantity: 1, unit: '罐' },
+      { name: '无痕钉', quantity: 4, unit: '个' },
+    ],
     createdAt: daysAgo(14),
     updatedAt: daysAgo(14),
   },
@@ -183,6 +205,11 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '顶部做出城堡的锯齿形状',
       '插上彩色小旗子装饰',
       '让孩子自己涂鸦上色'
+    ],
+    materials: [
+      { name: '美工刀', quantity: 1, unit: '把' },
+      { name: '彩色小旗', quantity: 4, unit: '面' },
+      { name: '水彩笔', quantity: 1, unit: '套' },
     ],
     createdAt: daysAgo(20),
     updatedAt: daysAgo(20),
@@ -207,6 +234,10 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '外面贴上好看的包装纸',
       '贴上小标签方便查找'
     ],
+    materials: [
+      { name: '包装纸', quantity: 2, unit: '张' },
+      { name: '小标签', quantity: 6, unit: '个' },
+    ],
     createdAt: daysAgo(25),
     updatedAt: daysAgo(25),
   },
@@ -229,6 +260,10 @@ export const MOCK_RECORDS: BoxRecord[] = [
       '每层之间涂上白乳胶',
       '压平晾干一整夜',
       '边缘打磨光滑，防止刮伤猫咪'
+    ],
+    materials: [
+      { name: '白乳胶', quantity: 1, unit: '瓶' },
+      { name: '砂纸', quantity: 2, unit: '张' },
     ],
     createdAt: daysAgo(30),
     updatedAt: daysAgo(30),
