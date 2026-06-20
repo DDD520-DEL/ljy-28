@@ -7,6 +7,7 @@ import { toast } from '@/components/Toast';
 interface BoxStore {
   records: BoxRecord[];
   currentCategory: CategoryType | 'all' | 'favorites';
+  searchKeyword: string;
   favorites: string[];
   isLoaded: boolean;
   isSaving: boolean;
@@ -17,6 +18,7 @@ interface BoxStore {
   deleteRecord: (id: string) => void;
   getRecordById: (id: string) => BoxRecord | undefined;
   setCategory: (category: CategoryType | 'all' | 'favorites') => void;
+  setSearchKeyword: (keyword: string) => void;
   getFilteredRecords: () => BoxRecord[];
   getStats: () => StatsData;
   toggleFavorite: (id: string) => void;
@@ -26,6 +28,7 @@ interface BoxStore {
 export const useBoxStore = create<BoxStore>((set, get) => ({
   records: [],
   currentCategory: 'all',
+  searchKeyword: '',
   favorites: [],
   isLoaded: false,
   isSaving: false,
@@ -129,11 +132,30 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     set({ currentCategory: category });
   },
 
+  setSearchKeyword: (keyword) => {
+    set({ searchKeyword: keyword });
+  },
+
   getFilteredRecords: () => {
-    const { records, currentCategory, favorites } = get();
-    if (currentCategory === 'all') return records;
-    if (currentCategory === 'favorites') return records.filter((r) => favorites.includes(r.id));
-    return records.filter((r) => r.category === currentCategory);
+    const { records, currentCategory, searchKeyword, favorites } = get();
+    let result = records;
+
+    if (currentCategory === 'favorites') {
+      result = result.filter((r) => favorites.includes(r.id));
+    } else if (currentCategory !== 'all') {
+      result = result.filter((r) => r.category === currentCategory);
+    }
+
+    if (searchKeyword.trim()) {
+      const keyword = searchKeyword.toLowerCase().trim();
+      result = result.filter(
+        (r) =>
+          r.name.toLowerCase().includes(keyword) ||
+          r.description.toLowerCase().includes(keyword)
+      );
+    }
+
+    return result;
   },
 
   toggleFavorite: (id) => {
