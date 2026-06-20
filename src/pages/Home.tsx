@@ -8,6 +8,7 @@ import CategoryTabs from '@/components/CategoryTabs';
 import IdeaCard from '@/components/IdeaCard';
 import SyncStatusBar from '@/components/SyncStatusBar';
 import ConflictResolver from '@/components/ConflictResolver';
+import DailyRecommend from '@/components/DailyRecommend';
 import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import type { CategoryType, DifficultyType } from '@/types';
 import { cn } from '@/lib/utils';
@@ -317,6 +318,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <DailyRecommend records={records} />
 
         {isManageMode && (
           <div className="sticky top-0 z-30 mb-4 animate-fade-in-up">
