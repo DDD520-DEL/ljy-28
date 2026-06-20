@@ -14,20 +14,22 @@ interface CommunityCardProps {
 
 export default function CommunityCard({ record, index = 0, className }: CommunityCardProps) {
   const navigate = useNavigate();
-  const { toggleLike, hasLiked } = useBoxStore();
-  const categoryLabel = CATEGORY_LABELS[record.category];
-  const difficultyLabel = DIFFICULTY_LABELS[record.difficulty];
-  const difficultyIcon = DIFFICULTY_ICONS[record.difficulty];
-  const difficultyOpt = DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty);
-  const liked = hasLiked(record.id);
+  const { toggleLike, records, likedRecords } = useBoxStore();
+  
+  const latestRecord = records.find(r => r.id === record.id) || record;
+  const categoryLabel = CATEGORY_LABELS[latestRecord.category];
+  const difficultyLabel = DIFFICULTY_LABELS[latestRecord.difficulty];
+  const difficultyIcon = DIFFICULTY_ICONS[latestRecord.difficulty];
+  const difficultyOpt = DIFFICULTY_OPTIONS.find(d => d.key === latestRecord.difficulty);
+  const liked = likedRecords.includes(latestRecord.id);
 
   const handleClick = () => {
-    navigate(`/detail/${record.id}?from=community`);
+    navigate(`/detail/${latestRecord.id}?from=community`);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleLike(record.id);
+    toggleLike(latestRecord.id);
   };
 
   return (
@@ -42,8 +44,8 @@ export default function CommunityCard({ record, index = 0, className }: Communit
     >
       <div className="relative overflow-hidden aspect-[4/3] bg-kraft-100">
         <img
-          src={record.afterImage}
-          alt={record.name}
+          src={latestRecord.afterImage}
+          alt={latestRecord.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
@@ -70,7 +72,7 @@ export default function CommunityCard({ record, index = 0, className }: Communit
           title={liked ? '取消点赞' : '点赞'}
         >
           <Heart className={cn('w-4 h-4', liked && 'fill-current')} />
-          <span className="text-xs font-medium">{record.likes}</span>
+          <span className="text-xs font-medium">{latestRecord.likes}</span>
         </button>
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -86,30 +88,30 @@ export default function CommunityCard({ record, index = 0, className }: Communit
           <div className="w-6 h-6 rounded-full bg-kraft-100 flex items-center justify-center flex-shrink-0">
             <User className="w-3.5 h-3.5 text-kraft-500" />
           </div>
-          <span className="text-xs text-kraft-500 font-medium">{record.authorName}</span>
+          <span className="text-xs text-kraft-500 font-medium">{latestRecord.authorName}</span>
           <span className="text-xs text-kraft-300">·</span>
-          <span className="text-xs text-kraft-400">{formatDateRelative(record.publishedAt || record.createdAt)}</span>
+          <span className="text-xs text-kraft-400">{formatDateRelative(latestRecord.publishedAt || latestRecord.createdAt)}</span>
         </div>
         <h3 className="font-display text-lg font-semibold text-kraft-800 mb-2 line-clamp-1 group-hover:text-kraft-600 transition-colors">
-          {record.name}
+          {latestRecord.name}
         </h3>
         <p className="text-sm text-kraft-500 line-clamp-2 mb-3 min-h-[2.5rem]">
-          {record.description}
+          {latestRecord.description}
         </p>
         <div className="flex items-center justify-between text-xs text-kraft-400">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Ruler className="w-3.5 h-3.5" />
-              {record.boxLength}×{record.boxWidth}cm
+              {latestRecord.boxLength}×{latestRecord.boxWidth}cm
             </span>
             <span className="flex items-center gap-1">
               <Layers className="w-3.5 h-3.5" />
-              {record.corrugateLayers}层
+              {latestRecord.corrugateLayers}层
             </span>
-            {record.materials && record.materials.length > 0 && (
+            {latestRecord.materials && latestRecord.materials.length > 0 && (
               <span className="flex items-center gap-1">
                 <Wrench className="w-3.5 h-3.5" />
-                {record.materials.length}种材料
+                {latestRecord.materials.length}种材料
               </span>
             )}
           </div>

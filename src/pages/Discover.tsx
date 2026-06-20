@@ -10,6 +10,7 @@ export default function Discover() {
   const {
     init,
     isLoaded,
+    records,
     communityCategory,
     communitySortBy,
     setCommunityCategory,
@@ -26,7 +27,7 @@ export default function Discover() {
     }
   }, [init, isLoaded]);
 
-  const publishedRecords = useMemo(() => getPublishedRecords(), [getPublishedRecords, communityCategory, communitySortBy]);
+  const publishedRecords = useMemo(() => getPublishedRecords(), [records, getPublishedRecords, communityCategory, communitySortBy]);
 
   const filteredRecords = useMemo(() => {
     if (!searchKeyword.trim()) return publishedRecords;

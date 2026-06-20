@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -29,8 +29,7 @@ export default function Detail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromCommunity = searchParams.get('from') === 'community';
-  const { getRecordById, deleteRecord, init, isLoaded, toggleFavorite, isFavorite, togglePublish, toggleLike, hasLiked, currentUserId } = useBoxStore();
-  const [publishSwitch, setPublishSwitch] = useState(false);
+  const { records, likedRecords, deleteRecord, init, isLoaded, toggleFavorite, favorites, togglePublish, toggleLike, currentUserId } = useBoxStore();
 
   useEffect(() => {
     if (!isLoaded) {
@@ -38,15 +37,11 @@ export default function Detail() {
     }
   }, [init, isLoaded]);
 
-  const record = id ? getRecordById(id) : undefined;
+  const record = id ? records.find(r => r.id === id) : undefined;
   const isOwner = record && record.authorId === currentUserId;
-  const liked = record ? hasLiked(record.id) : false;
-
-  useEffect(() => {
-    if (record) {
-      setPublishSwitch(!!record.isPublished);
-    }
-  }, [record?.isPublished]);
+  const liked = record ? likedRecords.includes(record.id) : false;
+  const isFavorited = record ? favorites.includes(record.id) : false;
+  const isPublished = !!record?.isPublished;
 
   useEffect(() => {
     if (isLoaded && id && !record) {
@@ -64,10 +59,7 @@ export default function Detail() {
 
   const handlePublishToggle = () => {
     if (!record) return;
-    const success = togglePublish(record.id);
-    if (success) {
-      setPublishSwitch(!publishSwitch);
-    }
+    togglePublish(record.id);
   };
 
   if (!record) {
@@ -113,18 +105,18 @@ export default function Detail() {
               title={liked ? '取消点赞' : '点赞'}
             >
               <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-              <span className="text-sm font-medium">{record?.likes || 0}</span>
+              <span className="text-sm font-medium">{record.likes}</span>
             </button>
             <button
               onClick={() => record && toggleFavorite(record.id)}
               className={`p-2 rounded-lg transition-colors ${
-                record && isFavorite(record.id)
+                isFavorited
                   ? 'text-amber-500 hover:bg-amber-50'
                   : 'text-kraft-500 hover:text-amber-500 hover:bg-amber-50'
               }`}
-              title={record && isFavorite(record.id) ? '取消收藏' : '收藏'}
+              title={isFavorited ? '取消收藏' : '收藏'}
             >
-              <Star className={`w-5 h-5 ${record && isFavorite(record.id) ? 'fill-current' : ''}`} />
+              <Star className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
             </button>
             {isOwner && (
               <button
@@ -302,14 +294,14 @@ export default function Detail() {
                   <div>
                     <h3 className="font-semibold text-kraft-800 flex items-center gap-2">
                       发布到社区广场
-                      {publishSwitch && (
+                      {isPublished && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-forest-100 text-forest-700">
                           已开启
                         </span>
                       )}
                     </h3>
                     <p className="text-sm text-kraft-500 mt-0.5">
-                      {publishSwitch
+                      {isPublished
                         ? '你的创意正在社区广场展示，其他用户可以浏览和点赞'
                         : '开启后，这条改造记录将对所有用户可见'}
                     </p>
@@ -319,13 +311,13 @@ export default function Detail() {
                   onClick={handlePublishToggle}
                   className={cn(
                     'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2',
-                    publishSwitch ? 'bg-forest-500' : 'bg-kraft-200'
+                    isPublished ? 'bg-forest-500' : 'bg-kraft-200'
                   )}
                 >
                   <span
                     className={cn(
                       'inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200',
-                      publishSwitch ? 'translate-x-6' : 'translate-x-1'
+                      isPublished ? 'translate-x-6' : 'translate-x-1'
                     )}
                   />
                 </button>
