@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import StatCard from '@/components/StatCard';
 import TrendChart from '@/components/TrendChart';
@@ -144,6 +144,13 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-paper-cream/80 via-paper-cream/60 to-paper-cream" />
         
         <div className="relative container py-12 md:py-16">
+          <button
+            onClick={() => navigate('/settings')}
+            className="absolute top-4 right-4 md:top-6 md:right-6 inline-flex items-center justify-center w-11 h-11 rounded-full bg-paper-white/80 backdrop-blur-sm border border-kraft-200 text-kraft-600 hover:text-kraft-800 hover:bg-paper-white hover:border-kraft-300 hover:shadow-paper transition-all duration-200 z-10 dark:bg-white/5 dark:border-kraft-700 dark:text-kraft-400 dark:hover:bg-white/10 dark:hover:text-kraft-200"
+            title="设置"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
             <div className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-3 mb-3">

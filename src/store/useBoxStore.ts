@@ -16,6 +16,7 @@ import { CATEGORY_LABELS } from '@/constants';
 import {
   loadFromStorage,
   saveToStorage,
+  removeFromStorage,
   STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
   LIKED_STORAGE_KEY,
@@ -93,6 +94,7 @@ interface BoxStore {
   resolveConflicts: (resolutions: Map<string, 'local' | 'cloud'>) => Promise<void>;
   clearConflicts: () => void;
   refreshSyncStatus: () => void;
+  clearAllData: () => void;
 }
 
 export const useBoxStore = create<BoxStore>((set, get) => ({
@@ -369,7 +371,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     try {
       saveToStorage(VERSIONS_STORAGE_KEY, newVersions);
       set({ recordVersions: newVersions });
-    } catch (e) {
+    } catch {
       // 忽略删除版本时的存储错误
     }
   },
@@ -680,6 +682,37 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   clearConflicts: () => {
     set({ syncConflicts: [], pendingSyncDirection: null, syncStatus: 'idle' });
+  },
+
+  clearAllData: () => {
+    const LAST_SYNC_KEY = 'box_creative_log_last_sync';
+    const CLOUD_USER_KEY = 'box_creative_log_cloud_user';
+    
+    removeFromStorage(STORAGE_KEY);
+    removeFromStorage(FAVORITES_STORAGE_KEY);
+    removeFromStorage(LIKED_STORAGE_KEY);
+    removeFromStorage(CURRENT_USER_ID_KEY);
+    removeFromStorage(CURRENT_USER_NAME_KEY);
+    removeFromStorage(VERSIONS_STORAGE_KEY);
+    removeFromStorage(LAST_SYNC_KEY);
+    removeFromStorage(CLOUD_USER_KEY);
+    removeFromStorage('theme');
+
+    set({
+      records: [],
+      recordVersions: [],
+      favorites: [],
+      likedRecords: [],
+      currentUserId: '',
+      currentUserName: '',
+      user: null,
+      syncConflicts: [],
+      lastSyncAt: null,
+      pendingSyncDirection: null,
+      isLoaded: true,
+    });
+
+    toast.success('已清除全部本地数据');
   },
 
   refreshSyncStatus: () => {

@@ -17,17 +17,116 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dark {
+  color: #E8E0D5;
+  background-color: #1A1410;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background-color: #F5F0E8;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background-color: #1A1410;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+}
+
+.dark .bg-paper-cream { background-color: #1A1410; }
+.dark .bg-paper-white { background-color: #2A1F18; }
+.dark .bg-paper-warm { background-color: #251C14; }
+.dark .bg-kraft-50 { background-color: #251C14; }
+.dark .bg-kraft-100 { background-color: #2F2319; }
+.dark .bg-kraft-200 { background-color: #3A2B1E; }
+.dark .bg-white { background-color: #2A1F18; }
+
+.dark .text-kraft-800 { color: #E8E0D5; }
+.dark .text-kraft-700 { color: #D9CCB8; }
+.dark .text-kraft-600 { color: #C4A574; }
+.dark .text-kraft-500 { color: #B07D4E; }
+.dark .text-kraft-400 { color: #8B5E34; }
+.dark .text-kraft-300 { color: #6B4523; }
+
+.dark .border-kraft-100 { border-color: #3A2B1E; }
+.dark .border-kraft-200 { border-color: #3A2B1E; }
+.dark .border-kraft-300 { border-color: #4A2F18; }
+
+.dark .bg-gradient-to-b.from-paper-cream\/80 { --tw-gradient-from: rgba(26, 20, 16, 0.8); }
+.dark .bg-gradient-to-b.via-paper-cream\/60 { --tw-gradient-via: rgba(26, 20, 16, 0.6); }
+.dark .bg-gradient-to-b.to-paper-cream { --tw-gradient-to: #1A1410; }
+.dark .bg-gradient-to-br.from-kraft-100 { --tw-gradient-from: #2F2319; }
+.dark .bg-gradient-to-br.to-paper-cream { --tw-gradient-to: #1A1410; }
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #2A1F18;
+  color: #E8E0D5;
+  border-color: #3A2B1E;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #6B4523;
+}
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #8B5E34;
+}
+
+.dark .card-paper {
+  background-color: #2A1F18;
+  border-color: #3A2B1E;
+}
+.dark .card-kraft {
+  background: linear-gradient(to bottom right, #2F2319, #251C14);
+  border-color: #3A2B1E;
+}
+
+.dark .shadow-paper,
+.dark .shadow-card,
+.dark .shadow-paper-hover {
+  --tw-shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+.dark .tag-pill {
+  background-color: #2F2319;
+  color: #D9CCB8;
+  border-color: #3A2B1E;
+}
+.dark .tag-pill-active {
+  background-color: #6B4523;
+  color: #fff;
+  border-color: #6B4523;
+}
+
+.dark .btn-secondary {
+  background-color: #2A1F18;
+  color: #D9CCB8;
+  border-color: #3A2B1E;
+}
+.dark .btn-secondary:hover {
+  background-color: #3A2B1E;
+}
+
+.dark .btn-ghost {
+  color: #C4A574;
+}
+.dark .btn-ghost:hover {
+  background-color: #2F2319;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(42, 31, 24, 0.95);
 }
 
 @layer components {
