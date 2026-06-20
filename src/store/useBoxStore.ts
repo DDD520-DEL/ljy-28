@@ -1,9 +1,38 @@
 import { create } from 'zustand';
-import type { BoxRecord, CategoryType, DifficultyType, StatsData, TrendRangeType, TrendData } from '@/types';
+import type {
+  BoxRecord,
+  CategoryType,
+  DifficultyType,
+  StatsData,
+  TrendRangeType,
+  TrendData,
+  User,
+  SyncStatus,
+  SyncConflict,
+} from '@/types';
 import { CATEGORY_LABELS } from '@/constants';
-import { loadFromStorage, saveToStorage, STORAGE_KEY, FAVORITES_STORAGE_KEY, generateId, StorageQuotaExceededError } from '@/utils';
+import {
+  loadFromStorage,
+  saveToStorage,
+  STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  generateId,
+  StorageQuotaExceededError,
+} from '@/utils';
 import { MOCK_RECORDS } from '@/data/mockData';
 import { toast } from '@/components/Toast';
+import {
+  getCurrentUser,
+  loginUser as cloudLogin,
+  logoutUser as cloudLogout,
+  uploadToCloud,
+  downloadFromCloud,
+  getCloudData,
+  findConflicts,
+  mergeRecords,
+  mergeFavorites,
+  getLastSyncTime,
+} from '@/services/cloudSync';
 
 interface BoxStore {
   records: BoxRecord[];
@@ -13,7 +42,12 @@ interface BoxStore {
   favorites: string[];
   isLoaded: boolean;
   isSaving: boolean;
-  
+  user: User | null;
+  syncStatus: SyncStatus;
+  syncConflicts: SyncConflict[];
+  lastSyncAt: string | null;
+  pendingSyncDirection: 'upload' | 'download' | null;
+
   init: () => void;
   addRecord: (record: Omit<BoxRecord, 'id' | 'createdAt' | 'updatedAt'>) => boolean;
   updateRecord: (id: string, record: Partial<BoxRecord>) => boolean;
@@ -28,6 +62,14 @@ interface BoxStore {
   getTrendData: (range: TrendRangeType) => TrendData;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+
+  login: (name: string) => Promise<void>;
+  logout: () => void;
+  uploadToCloud: () => Promise<void>;
+  downloadFromCloud: () => Promise<void>;
+  resolveConflicts: (resolutions: Map<string, 'local' | 'cloud'>) => Promise<void>;
+  clearConflicts: () => void;
+  refreshSyncStatus: () => void;
 }
 
 export const useBoxStore = create<BoxStore>((set, get) => ({
@@ -38,22 +80,48 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   favorites: [],
   isLoaded: false,
   isSaving: false,
+  user: null,
+  syncStatus: 'idle',
+  syncConflicts: [],
+  lastSyncAt: null,
+  pendingSyncDirection: null,
 
   init: () => {
     const saved = loadFromStorage<BoxRecord[]>(STORAGE_KEY, []);
     const savedFavorites = loadFromStorage<string[]>(FAVORITES_STORAGE_KEY, []);
+    const user = getCurrentUser();
+    const lastSyncAt = getLastSyncTime();
+
     if (saved.length === 0) {
       try {
         saveToStorage(STORAGE_KEY, MOCK_RECORDS);
-        set({ records: MOCK_RECORDS, favorites: savedFavorites, isLoaded: true });
+        set({
+          records: MOCK_RECORDS,
+          favorites: savedFavorites,
+          isLoaded: true,
+          user,
+          lastSyncAt,
+        });
       } catch (e) {
         if (e instanceof StorageQuotaExceededError) {
           toast.warning('初始数据加载时存储空间不足，部分功能可能受限');
         }
-        set({ records: MOCK_RECORDS.slice(0, 3), favorites: savedFavorites, isLoaded: true });
+        set({
+          records: MOCK_RECORDS.slice(0, 3),
+          favorites: savedFavorites,
+          isLoaded: true,
+          user,
+          lastSyncAt,
+        });
       }
     } else {
-      set({ records: saved, favorites: savedFavorites, isLoaded: true });
+      set({
+        records: saved,
+        favorites: savedFavorites,
+        isLoaded: true,
+        user,
+        lastSyncAt,
+      });
     }
   },
 
@@ -286,5 +354,185 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       maxCount,
       total,
     };
+  },
+
+  login: async (name: string) => {
+    try {
+      set({ syncStatus: 'syncing' });
+      const user = await cloudLogin(name);
+      const lastSyncAt = getLastSyncTime();
+      set({ user, lastSyncAt, syncStatus: 'idle' });
+      toast.success(`欢迎，${user.name}！`);
+    } catch (e) {
+      set({ syncStatus: 'error' });
+      toast.error('登录失败，请重试');
+      throw e;
+    }
+  },
+
+  logout: () => {
+    cloudLogout();
+    set({ user: null, lastSyncAt: null, syncStatus: 'idle', syncConflicts: [] });
+    toast.info('已退出登录');
+  },
+
+  uploadToCloud: async () => {
+    const { user, records, favorites } = get();
+    if (!user) {
+      toast.warning('请先登录');
+      return;
+    }
+
+    try {
+      set({ syncStatus: 'syncing' });
+
+      const cloudData = await getCloudData(user.id);
+      if (cloudData && cloudData.records.length > 0) {
+        const conflicts = findConflicts(records, cloudData.records);
+        if (conflicts.length > 0) {
+          set({
+            syncConflicts: conflicts,
+            syncStatus: 'conflict',
+            pendingSyncDirection: 'upload',
+          });
+          toast.warning(`发现 ${conflicts.length} 条冲突记录，请选择保留版本`);
+          return;
+        }
+      }
+
+      const result = await uploadToCloud(records, favorites, user.id);
+      set({ syncStatus: 'success', lastSyncAt: result.lastSyncAt });
+      toast.success('数据已同步到云端');
+
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    } catch (e) {
+      set({ syncStatus: 'error' });
+      toast.error(e instanceof Error ? e.message : '上传失败');
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    }
+  },
+
+  downloadFromCloud: async () => {
+    const { user, records, favorites } = get();
+    if (!user) {
+      toast.warning('请先登录');
+      return;
+    }
+
+    try {
+      set({ syncStatus: 'syncing' });
+
+      const cloudData = await getCloudData(user.id);
+      if (!cloudData || cloudData.records.length === 0) {
+        set({ syncStatus: 'idle' });
+        toast.info('云端暂无数据');
+        return;
+      }
+
+      const conflicts = findConflicts(records, cloudData.records);
+      if (conflicts.length > 0) {
+        set({
+          syncConflicts: conflicts,
+          syncStatus: 'conflict',
+          pendingSyncDirection: 'download',
+        });
+        toast.warning(`发现 ${conflicts.length} 条冲突记录，请选择保留版本`);
+        return;
+      }
+
+      const mergedRecords = mergeRecords(records, cloudData.records, new Map());
+      const allIds = mergedRecords.map((r) => r.id);
+      const mergedFavorites = mergeFavorites(favorites, cloudData.favorites, allIds);
+
+      saveToStorage(STORAGE_KEY, mergedRecords);
+      saveToStorage(FAVORITES_STORAGE_KEY, mergedFavorites);
+
+      set({
+        records: mergedRecords,
+        favorites: mergedFavorites,
+        lastSyncAt: cloudData.lastSyncAt,
+        syncStatus: 'success',
+      });
+      toast.success('已从云端拉取数据');
+
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    } catch (e) {
+      set({ syncStatus: 'error' });
+      toast.error(e instanceof Error ? e.message : '拉取失败');
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    }
+  },
+
+  resolveConflicts: async (resolutions: Map<string, 'local' | 'cloud'>) => {
+    const { user, records, favorites, pendingSyncDirection } = get();
+    if (!user) return;
+
+    try {
+      set({ syncStatus: 'syncing' });
+
+      const cloudData = await getCloudData(user.id);
+      if (!cloudData) {
+        throw new Error('云端数据不存在');
+      }
+
+      const mergedRecords = mergeRecords(records, cloudData.records, resolutions);
+      const allIds = mergedRecords.map((r) => r.id);
+      const mergedFavorites = mergeFavorites(favorites, cloudData.favorites, allIds);
+
+      if (pendingSyncDirection === 'upload') {
+        const result = await uploadToCloud(mergedRecords, mergedFavorites, user.id);
+        saveToStorage(STORAGE_KEY, mergedRecords);
+        saveToStorage(FAVORITES_STORAGE_KEY, mergedFavorites);
+        set({
+          records: mergedRecords,
+          favorites: mergedFavorites,
+          syncConflicts: [],
+          pendingSyncDirection: null,
+          syncStatus: 'success',
+          lastSyncAt: result.lastSyncAt,
+        });
+        toast.success('数据已同步到云端');
+      } else {
+        saveToStorage(STORAGE_KEY, mergedRecords);
+        saveToStorage(FAVORITES_STORAGE_KEY, mergedFavorites);
+        set({
+          records: mergedRecords,
+          favorites: mergedFavorites,
+          syncConflicts: [],
+          pendingSyncDirection: null,
+          syncStatus: 'success',
+          lastSyncAt: cloudData.lastSyncAt,
+        });
+        toast.success('已从云端拉取数据');
+      }
+
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    } catch (e) {
+      set({ syncStatus: 'error' });
+      toast.error(e instanceof Error ? e.message : '同步失败');
+      setTimeout(() => {
+        set({ syncStatus: 'idle' });
+      }, 2000);
+    }
+  },
+
+  clearConflicts: () => {
+    set({ syncConflicts: [], pendingSyncDirection: null, syncStatus: 'idle' });
+  },
+
+  refreshSyncStatus: () => {
+    const user = getCurrentUser();
+    const lastSyncAt = getLastSyncTime();
+    set({ user, lastSyncAt });
   },
 }));

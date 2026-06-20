@@ -6,14 +6,30 @@ import StatCard from '@/components/StatCard';
 import TrendChart from '@/components/TrendChart';
 import CategoryTabs from '@/components/CategoryTabs';
 import IdeaCard from '@/components/IdeaCard';
+import SyncStatusBar from '@/components/SyncStatusBar';
+import ConflictResolver from '@/components/ConflictResolver';
 import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import type { CategoryType, DifficultyType } from '@/types';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { records, currentCategory, searchKeyword, difficultyFilter, setCategory, setSearchKeyword, setDifficultyFilter, getStats, init, isLoaded, favorites, batchDeleteRecords } =
-    useBoxStore();
+  const {
+    records,
+    currentCategory,
+    searchKeyword,
+    difficultyFilter,
+    setCategory,
+    setSearchKeyword,
+    setDifficultyFilter,
+    getStats,
+    init,
+    isLoaded,
+    favorites,
+    batchDeleteRecords,
+    syncConflicts,
+    clearConflicts,
+  } = useBoxStore();
 
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -119,8 +135,10 @@ export default function Home() {
 
   const isAllSelected = filteredRecords.length > 0 && selectedIds.size === filteredRecords.length;
 
+  const hasConflicts = syncConflicts.length > 0;
+
   return (
-    <div className="min-h-screen bg-paper-cream">
+    <div className="min-h-screen bg-paper-cream flex flex-col">
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-corrugate opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-b from-paper-cream/80 via-paper-cream/60 to-paper-cream" />
@@ -187,7 +205,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container pb-16">
+      <main className="container pb-16 flex-1">
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 -mt-2 relative z-10">
           <StatCard
             icon={Package}
@@ -413,9 +431,12 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="py-8 text-center text-sm text-kraft-400 border-t border-kraft-100">
-        <p>🌿 纸箱二次利用 · 让环保成为一种生活方式</p>
-      </footer>
+      <div className="mt-auto">
+        <footer className="py-8 text-center text-sm text-kraft-400 border-t border-kraft-100">
+          <p>🌿 纸箱二次利用 · 让环保成为一种生活方式</p>
+        </footer>
+        <SyncStatusBar />
+      </div>
 
       {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -447,6 +468,11 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <ConflictResolver
+        open={hasConflicts}
+        onClose={clearConflicts}
+      />
     </div>
   );
 }

@@ -73,3 +73,27 @@ export interface TrendData {
   maxCount: number;
   total: number;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'conflict';
+
+export type SyncDirection = 'upload' | 'download';
+
+export interface SyncConflict {
+  id: string;
+  local: BoxRecord;
+  cloud: BoxRecord;
+  localNewer: boolean;
+}
+
+export interface CloudSyncData {
+  records: BoxRecord[];
+  favorites: string[];
+  lastSyncAt: string;
+  userId: string;
+}
