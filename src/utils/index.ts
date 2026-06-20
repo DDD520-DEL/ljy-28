@@ -9,36 +9,94 @@ export function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function compressImage(file: File, maxWidth = 800, quality = 0.8): Promise<string> {
+export interface CompressOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  maxSizeKB?: number;
+  minQuality?: number;
+}
+
+export async function compressImage(
+  file: File,
+  options: CompressOptions = {}
+): Promise<string> {
+  const {
+    maxWidth = 800,
+    maxHeight = 800,
+    quality = 0.7,
+    maxSizeKB = 150,
+    minQuality = 0.4,
+  } = options;
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
 
     img.onload = () => {
       let { width, height } = img;
-      
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
+
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.floor(width * ratio);
+        height = Math.floor(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Canvas 2D context not supported'));
+        return;
       }
 
       canvas.width = width;
       canvas.height = height;
-      
-      ctx?.drawImage(img, 0, 0, width, height);
-      
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let currentQuality = quality;
+      let result = '';
+
+      const tryCompress = () => {
+        result = canvas.toDataURL('image/jpeg', currentQuality);
+        const sizeKB = (result.length * 0.75) / 1024;
+
+        if (sizeKB > maxSizeKB && currentQuality > minQuality) {
+          currentQuality = Math.max(currentQuality - 0.15, minQuality);
+          tryCompress();
+        } else {
+          URL.revokeObjectURL(img.src);
+          resolve(result);
+        }
+      };
+
       try {
-        const base64 = canvas.toDataURL('image/jpeg', quality);
-        resolve(base64);
+        tryCompress();
       } catch (e) {
+        URL.revokeObjectURL(img.src);
         reject(e);
       }
     };
 
-    img.onerror = reject;
+    img.onerror = () => {
+      reject(new Error('图片加载失败'));
+    };
+
     img.src = URL.createObjectURL(file);
   });
+}
+
+export function getBase64SizeKB(base64: string): number {
+  const base64Length = base64.length - (base64.indexOf(',') + 1);
+  return (base64Length * 0.75) / 1024;
+}
+
+export function formatFileSize(kb: number): string {
+  if (kb < 1) return `${Math.round(kb * 1024)} B`;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
 }
 
 export function generateId(): string {

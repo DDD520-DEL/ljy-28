@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Plus, Trash2, Package, Ruler, Layers, CheckCircle } fr
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORIES, COMPLETENESS_OPTIONS, CORRUGATE_LAYERS } from '@/constants';
 import ImageUploader from '@/components/ImageUploader';
+import { toast } from '@/components/Toast';
 import type { CategoryType, CompletenessType, BoxRecord } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -82,7 +83,7 @@ export default function Record() {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      alert('请输入改造项目名称');
+      toast.warning('请输入改造项目名称');
       return;
     }
 
@@ -93,13 +94,16 @@ export default function Record() {
       steps: validSteps,
     };
 
+    let success = false;
     if (isEdit && id) {
-      updateRecord(id, recordData);
+      success = updateRecord(id, recordData);
     } else {
-      addRecord(recordData);
+      success = addRecord(recordData);
     }
 
-    navigate('/');
+    if (success) {
+      navigate('/');
+    }
   };
 
   return (
