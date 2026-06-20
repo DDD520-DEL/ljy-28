@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #4A2F18;
+  background-color: #F5F0E8;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #F5F0E8;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-kraft-400 text-white rounded-xl font-medium 
+           shadow-paper hover:bg-kraft-500 hover:shadow-paper-hover
+           transform hover:-translate-y-0.5 transition-all duration-200
+           active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-kraft-400 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-paper-white text-kraft-700 rounded-xl font-medium
+           border border-kraft-200 shadow-card
+           hover:bg-kraft-50 hover:border-kraft-300
+           transform hover:-translate-y-0.5 transition-all duration-200
+           active:translate-y-0 focus:outline-none;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 text-kraft-600 rounded-lg font-medium
+           hover:bg-kraft-100 transition-colors duration-200
+           focus:outline-none;
+  }
+
+  .card-paper {
+    @apply bg-paper-white rounded-2xl shadow-card border border-kraft-100
+           overflow-hidden;
+  }
+
+  .card-kraft {
+    @apply bg-gradient-to-br from-kraft-100 to-paper-cream rounded-2xl shadow-card
+           border border-kraft-200 overflow-hidden;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-paper-white border border-kraft-200 rounded-xl
+           text-kraft-800 placeholder-kraft-300
+           focus:outline-none focus:ring-2 focus:ring-kraft-400 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  .label-text {
+    @apply block text-sm font-medium text-kraft-700 mb-2;
+  }
+
+  .tag-pill {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+           bg-kraft-100 text-kraft-700 border border-kraft-200
+           transition-all duration-200;
+  }
+
+  .tag-pill-active {
+    @apply bg-kraft-400 text-white border-kraft-400 shadow-paper;
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .corrugate-border {
+    background-image: 
+      linear-gradient(135deg, #E8E0D5 25%, transparent 25%),
+      linear-gradient(225deg, #E8E0D5 25%, transparent 25%),
+      linear-gradient(45deg, #E8E0D5 25%, transparent 25%),
+      linear-gradient(315deg, #E8E0D5 25%, transparent 25%);
+    background-size: 12px 12px;
+    background-position: 0 0, 6px 0, 6px -6px, 0px 6px;
+  }
+}
