@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, Package, Ruler, Layers, CheckCircle, Wrench } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
-import { CATEGORIES, COMPLETENESS_OPTIONS, CORRUGATE_LAYERS } from '@/constants';
+import { CATEGORIES, COMPLETENESS_OPTIONS, CORRUGATE_LAYERS, DIFFICULTY_OPTIONS } from '@/constants';
 import ImageUploader from '@/components/ImageUploader';
 import { toast } from '@/components/Toast';
-import type { CategoryType, CompletenessType, BoxRecord, MaterialItem } from '@/types';
+import type { CategoryType, CompletenessType, DifficultyType, BoxRecord, MaterialItem } from '@/types';
 import { cn } from '@/lib/utils';
 
 export default function Record() {
@@ -26,6 +26,7 @@ export default function Record() {
     corrugateLayers: 5,
     completeness: 'good' as CompletenessType,
     expressSource: '',
+    difficulty: 'beginner' as DifficultyType,
     steps: [''] as string[],
     materials: [] as MaterialItem[],
   });
@@ -52,6 +53,7 @@ export default function Record() {
           corrugateLayers: record.corrugateLayers,
           completeness: record.completeness,
           expressSource: record.expressSource,
+          difficulty: record.difficulty,
           steps: record.steps.length > 0 ? record.steps : [''],
           materials: record.materials || [],
         });
@@ -250,6 +252,38 @@ export default function Record() {
                       className={cn(
                         'text-xs',
                         formData.completeness === opt.key
+                          ? 'text-white/80'
+                          : 'text-kraft-400'
+                      )}
+                    >
+                      {opt.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="label-text">改造难度</label>
+              <div className="grid grid-cols-3 gap-2">
+                {DIFFICULTY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => handleInputChange('difficulty', opt.key as DifficultyType)}
+                    className={cn(
+                      'p-3 rounded-xl text-center transition-all',
+                      formData.difficulty === opt.key
+                        ? 'bg-kraft-400 text-white shadow-paper'
+                        : 'bg-kraft-50 text-kraft-700 border border-kraft-200 hover:bg-kraft-100'
+                    )}
+                  >
+                    <p className="text-xl mb-1">{opt.icon}</p>
+                    <p className="font-medium text-sm mb-0.5">{opt.label}</p>
+                    <p
+                      className={cn(
+                        'text-xs',
+                        formData.difficulty === opt.key
                           ? 'text-white/80'
                           : 'text-kraft-400'
                       )}

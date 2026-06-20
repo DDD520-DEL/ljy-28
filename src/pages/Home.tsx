@@ -1,26 +1,40 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import StatCard from '@/components/StatCard';
 import CategoryTabs from '@/components/CategoryTabs';
 import IdeaCard from '@/components/IdeaCard';
-import type { CategoryType } from '@/types';
+import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
+import type { CategoryType, DifficultyType } from '@/types';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { records, currentCategory, searchKeyword, setCategory, setSearchKeyword, getStats, init, isLoaded, favorites, batchDeleteRecords } =
+  const { records, currentCategory, searchKeyword, difficultyFilter, setCategory, setSearchKeyword, setDifficultyFilter, getStats, init, isLoaded, favorites, batchDeleteRecords } =
     useBoxStore();
 
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
+  const difficultyDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isLoaded) {
       init();
     }
   }, [init, isLoaded]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(e.target as Node)) {
+        setShowDifficultyDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filteredRecords = useMemo(() => {
     let result = records;
@@ -29,6 +43,10 @@ export default function Home() {
       result = result.filter((r) => favorites.includes(r.id));
     } else if (currentCategory !== 'all') {
       result = result.filter((r) => r.category === currentCategory);
+    }
+
+    if (difficultyFilter !== 'all') {
+      result = result.filter((r) => r.difficulty === difficultyFilter);
     }
 
     if (searchKeyword.trim()) {
@@ -41,7 +59,7 @@ export default function Home() {
     }
 
     return result;
-  }, [records, currentCategory, searchKeyword, favorites]);
+  }, [records, currentCategory, searchKeyword, difficultyFilter, favorites]);
 
   const stats = useMemo(() => getStats(), [getStats]);
 
@@ -219,11 +237,57 @@ export default function Home() {
             </div>
           </div>
 
-          <CategoryTabs
-            activeCategory={currentCategory}
-            onCategoryChange={handleCategoryChange}
-            counts={categoryCounts}
-          />
+          <div className="flex items-center gap-3">
+            <div className="flex-1 overflow-hidden">
+              <CategoryTabs
+                activeCategory={currentCategory}
+                onCategoryChange={handleCategoryChange}
+                counts={categoryCounts}
+              />
+            </div>
+            <div className="relative flex-shrink-0" ref={difficultyDropdownRef}>
+              <button
+                onClick={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border transition-all duration-200',
+                  difficultyFilter !== 'all'
+                    ? 'bg-kraft-400 text-white border-kraft-400 shadow-paper'
+                    : 'bg-paper-white text-kraft-600 border-kraft-200 hover:bg-kraft-50 hover:border-kraft-300'
+                )}
+              >
+                <Award className="w-4 h-4" />
+                <span>{difficultyFilter === 'all' ? '难度' : DIFFICULTY_LABELS[difficultyFilter]}</span>
+                <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', showDifficultyDropdown && 'rotate-180')} />
+              </button>
+              {showDifficultyDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-kraft-100 py-1 z-20 animate-fade-in-up">
+                  <button
+                    onClick={() => { setDifficultyFilter('all'); setShowDifficultyDropdown(false); }}
+                    className={cn(
+                      'w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-kraft-50 transition-colors',
+                      difficultyFilter === 'all' ? 'text-kraft-800 font-medium bg-kraft-50' : 'text-kraft-600'
+                    )}
+                  >
+                    全部难度
+                  </button>
+                  {DIFFICULTY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => { setDifficultyFilter(opt.key); setShowDifficultyDropdown(false); }}
+                      className={cn(
+                        'w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-kraft-50 transition-colors',
+                        difficultyFilter === opt.key ? 'text-kraft-800 font-medium bg-kraft-50' : 'text-kraft-600'
+                      )}
+                    >
+                      <span>{opt.icon}</span>
+                      <span>{opt.label}</span>
+                      <span className="text-xs text-kraft-400 ml-auto">{opt.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </section>
 
         {isManageMode && (

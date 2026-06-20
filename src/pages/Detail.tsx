@@ -12,9 +12,10 @@ import {
   Calendar,
   Star,
   Wrench,
+  Award,
 } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
-import { CATEGORY_LABELS, COMPLETENESS_LABELS } from '@/constants';
+import { CATEGORY_LABELS, COMPLETENESS_LABELS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import CompareSlider from '@/components/CompareSlider';
 import Timeline from '@/components/Timeline';
 import { formatDate } from '@/utils';
@@ -101,9 +102,15 @@ export default function Detail() {
 
       <main className="container py-6 max-w-3xl">
         <div className="mb-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-kraft-100 text-kraft-700 border border-kraft-200 mb-3">
-            {CATEGORY_LABELS[record.category]}
-          </span>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-kraft-100 text-kraft-700 border border-kraft-200">
+              {CATEGORY_LABELS[record.category]}
+            </span>
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty)?.bgColor} ${DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty)?.color} ${DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty)?.borderColor}`}>
+              <span>{DIFFICULTY_ICONS[record.difficulty]}</span>
+              {DIFFICULTY_LABELS[record.difficulty]}
+            </span>
+          </div>
           <h1 className="text-2xl md:text-3xl font-bold font-display text-kraft-800 mb-2">
             {record.name}
           </h1>
@@ -133,7 +140,7 @@ export default function Detail() {
             纸箱信息
           </h2>
           <div className="card-paper p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">
                 <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-kraft-50 flex items-center justify-center">
                   <Ruler className="w-6 h-6 text-kraft-500" />
@@ -169,6 +176,15 @@ export default function Detail() {
                 <p className="text-xs text-kraft-400 mb-1">快递来源</p>
                 <p className="font-semibold text-kraft-700">
                   {record.expressSource || '未知'}
+                </p>
+              </div>
+              <div className="text-center">
+                <div className={`w-12 h-12 mx-auto mb-2 rounded-xl ${DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty)?.bgColor} flex items-center justify-center`}>
+                  <Award className={`w-6 h-6 ${DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty)?.color}`} />
+                </div>
+                <p className="text-xs text-kraft-400 mb-1">改造难度</p>
+                <p className="font-semibold text-kraft-700">
+                  {DIFFICULTY_ICONS[record.difficulty]} {DIFFICULTY_LABELS[record.difficulty]}
                 </p>
               </div>
             </div>

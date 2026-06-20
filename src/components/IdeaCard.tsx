@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CATEGORY_LABELS } from '@/constants';
+import { CATEGORY_LABELS, DIFFICULTY_LABELS, DIFFICULTY_ICONS, DIFFICULTY_OPTIONS } from '@/constants';
 import { formatDateRelative } from '@/utils';
 import { Ruler, Layers, ArrowRight, Star, Wrench, Check } from 'lucide-react';
 import type { BoxRecord } from '@/types';
@@ -19,6 +19,9 @@ export default function IdeaCard({ record, index = 0, className, isManageMode = 
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useBoxStore();
   const categoryLabel = CATEGORY_LABELS[record.category];
+  const difficultyLabel = DIFFICULTY_LABELS[record.difficulty];
+  const difficultyIcon = DIFFICULTY_ICONS[record.difficulty];
+  const difficultyOpt = DIFFICULTY_OPTIONS.find(d => d.key === record.difficulty);
   const favorited = isFavorite(record.id);
 
   const handleClick = () => {
@@ -71,9 +74,16 @@ export default function IdeaCard({ record, index = 0, className, isManageMode = 
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/90 backdrop-blur-sm text-kraft-700 shadow-sm border border-kraft-100">
             {categoryLabel}
+          </span>
+          <span className={cn(
+            'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm shadow-sm border',
+            difficultyOpt?.bgColor, difficultyOpt?.color, difficultyOpt?.borderColor
+          )}>
+            <span className="text-xs">{difficultyIcon}</span>
+            {difficultyLabel}
           </span>
         </div>
         {!isManageMode && favorited && (

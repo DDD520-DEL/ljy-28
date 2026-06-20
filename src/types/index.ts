@@ -2,6 +2,8 @@ export type CategoryType = 'storage' | 'catHouse' | 'craft' | 'toy' | 'pot' | 'd
 
 export type CompletenessType = 'perfect' | 'good' | 'fair' | 'poor';
 
+export type DifficultyType = 'beginner' | 'intermediate' | 'expert';
+
 export interface MaterialItem {
   name: string;
   quantity: number;
@@ -23,6 +25,7 @@ export interface BoxRecord {
   expressSource: string;
   steps: string[];
   materials: MaterialItem[];
+  difficulty: DifficultyType;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +41,16 @@ export interface CompletenessInfo {
   key: CompletenessType;
   label: string;
   description: string;
+}
+
+export interface DifficultyInfo {
+  key: DifficultyType;
+  label: string;
+  description: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  icon: string;
 }
 
 export interface StatsData {

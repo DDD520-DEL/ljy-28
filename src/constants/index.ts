@@ -1,4 +1,4 @@
-import type { CategoryInfo, CompletenessInfo, CategoryType } from '@/types';
+import type { CategoryInfo, CompletenessInfo, DifficultyInfo, CategoryType, DifficultyType } from '@/types';
 
 export const CATEGORIES: CategoryInfo[] = [
   { key: 'all', label: '全部', icon: 'Grid3x3', color: 'kraft' },
@@ -35,4 +35,22 @@ export const COMPLETENESS_LABELS: Record<string, string> = {
   good: '轻微折痕',
   fair: '有破损但可用',
   poor: '破损较严重',
+};
+
+export const DIFFICULTY_OPTIONS: DifficultyInfo[] = [
+  { key: 'beginner', label: '入门', description: '简单易上手，适合新手', color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', icon: '🌱' },
+  { key: 'intermediate', label: '进阶', description: '需要一定动手能力', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: '🔧' },
+  { key: 'expert', label: '达人', description: '高难度，需要丰富经验', color: 'text-rose-700', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', icon: '🏆' },
+];
+
+export const DIFFICULTY_LABELS: Record<DifficultyType, string> = {
+  beginner: '入门',
+  intermediate: '进阶',
+  expert: '达人',
+};
+
+export const DIFFICULTY_ICONS: Record<DifficultyType, string> = {
+  beginner: '🌱',
+  intermediate: '🔧',
+  expert: '🏆',
 };

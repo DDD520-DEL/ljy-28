@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BoxRecord, CategoryType, StatsData } from '@/types';
+import type { BoxRecord, CategoryType, DifficultyType, StatsData } from '@/types';
 import { loadFromStorage, saveToStorage, STORAGE_KEY, FAVORITES_STORAGE_KEY, generateId, StorageQuotaExceededError } from '@/utils';
 import { MOCK_RECORDS } from '@/data/mockData';
 import { toast } from '@/components/Toast';
@@ -8,6 +8,7 @@ interface BoxStore {
   records: BoxRecord[];
   currentCategory: CategoryType | 'all' | 'favorites';
   searchKeyword: string;
+  difficultyFilter: DifficultyType | 'all';
   favorites: string[];
   isLoaded: boolean;
   isSaving: boolean;
@@ -20,6 +21,7 @@ interface BoxStore {
   getRecordById: (id: string) => BoxRecord | undefined;
   setCategory: (category: CategoryType | 'all' | 'favorites') => void;
   setSearchKeyword: (keyword: string) => void;
+  setDifficultyFilter: (difficulty: DifficultyType | 'all') => void;
   getFilteredRecords: () => BoxRecord[];
   getStats: () => StatsData;
   toggleFavorite: (id: string) => void;
@@ -30,6 +32,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   records: [],
   currentCategory: 'all',
   searchKeyword: '',
+  difficultyFilter: 'all',
   favorites: [],
   isLoaded: false,
   isSaving: false,
@@ -157,14 +160,22 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     set({ searchKeyword: keyword });
   },
 
+  setDifficultyFilter: (difficulty) => {
+    set({ difficultyFilter: difficulty });
+  },
+
   getFilteredRecords: () => {
-    const { records, currentCategory, searchKeyword, favorites } = get();
+    const { records, currentCategory, searchKeyword, difficultyFilter, favorites } = get();
     let result = records;
 
     if (currentCategory === 'favorites') {
       result = result.filter((r) => favorites.includes(r.id));
     } else if (currentCategory !== 'all') {
       result = result.filter((r) => r.category === currentCategory);
+    }
+
+    if (difficultyFilter !== 'all') {
+      result = result.filter((r) => r.difficulty === difficultyFilter);
     }
 
     if (searchKeyword.trim()) {
