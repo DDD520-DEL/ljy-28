@@ -110,3 +110,10 @@ export interface CloudSyncData {
   lastSyncAt: string;
   userId: string;
 }
+
+export interface RecordVersion {
+  id: string;
+  recordId: string;
+  snapshot: BoxRecord;
+  savedAt: string;
+}

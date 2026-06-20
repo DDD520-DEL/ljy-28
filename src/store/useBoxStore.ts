@@ -10,6 +10,7 @@ import type {
   SyncStatus,
   SyncConflict,
   SortType,
+  RecordVersion,
 } from '@/types';
 import { CATEGORY_LABELS } from '@/constants';
 import {
@@ -20,6 +21,7 @@ import {
   LIKED_STORAGE_KEY,
   CURRENT_USER_ID_KEY,
   CURRENT_USER_NAME_KEY,
+  VERSIONS_STORAGE_KEY,
   generateId,
   StorageQuotaExceededError,
 } from '@/utils';
@@ -40,6 +42,7 @@ import {
 
 interface BoxStore {
   records: BoxRecord[];
+  recordVersions: RecordVersion[];
   currentCategory: CategoryType | 'all' | 'favorites';
   searchKeyword: string;
   difficultyFilter: DifficultyType | 'all';
@@ -63,6 +66,10 @@ interface BoxStore {
   deleteRecord: (id: string) => void;
   batchDeleteRecords: (ids: string[]) => void;
   getRecordById: (id: string) => BoxRecord | undefined;
+  addVersion: (recordId: string, snapshot: BoxRecord) => void;
+  getVersionsByRecordId: (recordId: string) => RecordVersion[];
+  restoreVersion: (versionId: string) => boolean;
+  deleteVersionsByRecordId: (recordId: string) => void;
   setCategory: (category: CategoryType | 'all' | 'favorites') => void;
   setSearchKeyword: (keyword: string) => void;
   setDifficultyFilter: (difficulty: DifficultyType | 'all') => void;
@@ -90,6 +97,7 @@ interface BoxStore {
 
 export const useBoxStore = create<BoxStore>((set, get) => ({
   records: [],
+  recordVersions: [],
   currentCategory: 'all',
   searchKeyword: '',
   difficultyFilter: 'all',
@@ -109,6 +117,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   init: () => {
     const saved = loadFromStorage<BoxRecord[]>(STORAGE_KEY, []);
+    const savedVersions = loadFromStorage<RecordVersion[]>(VERSIONS_STORAGE_KEY, []);
     const savedFavorites = loadFromStorage<string[]>(FAVORITES_STORAGE_KEY, []);
     const savedLiked = loadFromStorage<string[]>(LIKED_STORAGE_KEY, []);
     const savedUserId = loadFromStorage<string>(CURRENT_USER_ID_KEY, '');
@@ -130,6 +139,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         saveToStorage(STORAGE_KEY, MOCK_RECORDS);
         set({
           records: MOCK_RECORDS,
+          recordVersions: savedVersions,
           favorites: savedFavorites,
           likedRecords: savedLiked,
           currentUserId: userId,
@@ -144,6 +154,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         }
         set({
           records: MOCK_RECORDS.slice(0, 3),
+          recordVersions: savedVersions,
           favorites: savedFavorites,
           likedRecords: savedLiked,
           currentUserId: userId,
@@ -163,6 +174,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       }));
       set({
         records: updatedRecords,
+        recordVersions: savedVersions,
         favorites: savedFavorites,
         likedRecords: savedLiked,
         currentUserId: userId,
@@ -209,7 +221,14 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   },
 
   updateRecord: (id, record) => {
-    const newRecords = get().records.map((r) =>
+    const { records, addVersion } = get();
+    const existingRecord = records.find((r) => r.id === id);
+    
+    if (existingRecord) {
+      addVersion(id, existingRecord);
+    }
+
+    const newRecords = records.map((r) =>
       r.id === id
         ? { ...r, ...record, updatedAt: new Date().toISOString() }
         : r
@@ -237,6 +256,8 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     const newRecords = get().records.filter((r) => r.id !== id);
     const newFavorites = get().favorites.filter((fid) => fid !== id);
     
+    get().deleteVersionsByRecordId(id);
+    
     try {
       saveToStorage(STORAGE_KEY, newRecords);
       saveToStorage(FAVORITES_STORAGE_KEY, newFavorites);
@@ -258,6 +279,8 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     const newRecords = get().records.filter((r) => !idSet.has(r.id));
     const newFavorites = get().favorites.filter((fid) => !idSet.has(fid));
 
+    ids.forEach((id) => get().deleteVersionsByRecordId(id));
+
     try {
       saveToStorage(STORAGE_KEY, newRecords);
       saveToStorage(FAVORITES_STORAGE_KEY, newFavorites);
@@ -275,6 +298,80 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   getRecordById: (id) => {
     return get().records.find((r) => r.id === id);
+  },
+
+  addVersion: (recordId, snapshot) => {
+    const { recordVersions } = get();
+    const newVersion: RecordVersion = {
+      id: generateId(),
+      recordId,
+      snapshot: JSON.parse(JSON.stringify(snapshot)),
+      savedAt: new Date().toISOString(),
+    };
+    const newVersions = [newVersion, ...recordVersions];
+    try {
+      saveToStorage(VERSIONS_STORAGE_KEY, newVersions);
+      set({ recordVersions: newVersions });
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.warning('存储空间不足，无法保存此版本历史');
+      }
+    }
+  },
+
+  getVersionsByRecordId: (recordId) => {
+    return get()
+      .recordVersions
+      .filter((v) => v.recordId === recordId)
+      .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+  },
+
+  restoreVersion: (versionId) => {
+    const { recordVersions, records } = get();
+    const version = recordVersions.find((v) => v.id === versionId);
+    if (!version) {
+      toast.error('版本不存在');
+      return false;
+    }
+
+    const existingRecord = records.find((r) => r.id === version.recordId);
+    if (existingRecord) {
+      get().addVersion(version.recordId, existingRecord);
+    }
+
+    const now = new Date().toISOString();
+    const restoredRecord: BoxRecord = {
+      ...version.snapshot,
+      updatedAt: now,
+    };
+
+    const newRecords = records.map((r) =>
+      r.id === version.recordId ? restoredRecord : r
+    );
+
+    try {
+      saveToStorage(STORAGE_KEY, newRecords);
+      set({ records: newRecords });
+      toast.success('已恢复到所选版本');
+      return true;
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.error('存储空间不足，恢复失败');
+      } else {
+        toast.error('恢复失败，请重试');
+      }
+      return false;
+    }
+  },
+
+  deleteVersionsByRecordId: (recordId) => {
+    const newVersions = get().recordVersions.filter((v) => v.recordId !== recordId);
+    try {
+      saveToStorage(VERSIONS_STORAGE_KEY, newVersions);
+      set({ recordVersions: newVersions });
+    } catch (e) {
+      // 忽略删除版本时的存储错误
+    }
   },
 
   setCategory: (category) => {

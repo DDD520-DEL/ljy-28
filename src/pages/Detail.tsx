@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -16,11 +16,13 @@ import {
   Share2,
   Heart,
   User,
+  History,
 } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORY_LABELS, COMPLETENESS_LABELS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import CompareSlider from '@/components/CompareSlider';
 import Timeline from '@/components/Timeline';
+import VersionHistoryModal from '@/components/VersionHistoryModal';
 import { formatDate, formatDateRelative } from '@/utils';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +31,8 @@ export default function Detail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromCommunity = searchParams.get('from') === 'community';
-  const { records, likedRecords, deleteRecord, init, isLoaded, toggleFavorite, favorites, togglePublish, toggleLike, currentUserId } = useBoxStore();
+  const { records, likedRecords, deleteRecord, init, isLoaded, toggleFavorite, favorites, togglePublish, toggleLike, currentUserId, getVersionsByRecordId } = useBoxStore();
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -339,17 +342,41 @@ export default function Detail() {
                 </p>
               </div>
             </div>
-            {isOwner && (
-              <button
-                onClick={() => navigate(`/record/${record.id}`)}
-                className="btn-primary py-2 px-4 text-sm"
-              >
-                编辑记录
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <button
+                  onClick={() => setShowVersionHistory(true)}
+                  className="btn-secondary py-2 px-4 text-sm inline-flex items-center gap-1.5"
+                >
+                  <History className="w-4 h-4" />
+                  历史版本
+                  {getVersionsByRecordId(record.id).length > 0 && (
+                    <span className="bg-amber-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                      {getVersionsByRecordId(record.id).length}
+                    </span>
+                  )}
+                </button>
+              )}
+              {isOwner && (
+                <button
+                  onClick={() => navigate(`/record/${record.id}`)}
+                  className="btn-primary py-2 px-4 text-sm"
+                >
+                  编辑记录
+                </button>
+              )}
+            </div>
           </div>
         </section>
       </main>
+
+      {id && (
+        <VersionHistoryModal
+          open={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          recordId={id}
+        />
+      )}
     </div>
   );
 }

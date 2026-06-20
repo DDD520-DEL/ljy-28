@@ -3,6 +3,7 @@ const FAVORITES_STORAGE_KEY = 'box_creative_log_favorites';
 const LIKED_STORAGE_KEY = 'box_creative_log_liked';
 const CURRENT_USER_ID_KEY = 'box_creative_log_user_id';
 const CURRENT_USER_NAME_KEY = 'box_creative_log_user_name';
+const VERSIONS_STORAGE_KEY = 'box_creative_log_versions';
 
 export class StorageQuotaExceededError extends Error {
   constructor(message: string) {
@@ -148,4 +149,4 @@ export function checkStorageSpace(additionalBytes: number): {
   return { canSave, availableBytes, message };
 }
 
-export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY };
+export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY, VERSIONS_STORAGE_KEY };
