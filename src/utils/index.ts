@@ -1,5 +1,7 @@
 export * from './storage';
 
+import type { Area } from 'react-easy-crop';
+
 export function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -122,4 +124,79 @@ export function formatDateRelative(dateString: string): string {
   if (diffDays < 7) return `${diffDays}天前`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
   return formatDate(dateString);
+}
+
+export async function getCroppedImage(
+  imageSrc: string,
+  pixelCrop: Area,
+  options: CompressOptions = {}
+): Promise<string> {
+  const {
+    maxWidth = 800,
+    maxHeight = 800,
+    quality = 0.7,
+    maxSizeKB = 150,
+    minQuality = 0.4,
+  } = options;
+
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    throw new Error('Canvas 2D context not supported');
+  }
+
+  let finalWidth = pixelCrop.width;
+  let finalHeight = pixelCrop.height;
+
+  if (finalWidth > maxWidth || finalHeight > maxHeight) {
+    const ratio = Math.min(maxWidth / finalWidth, maxHeight / finalHeight);
+    finalWidth = Math.floor(finalWidth * ratio);
+    finalHeight = Math.floor(finalHeight * ratio);
+  }
+
+  canvas.width = finalWidth;
+  canvas.height = finalHeight;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, finalWidth, finalHeight);
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    finalWidth,
+    finalHeight
+  );
+
+  let currentQuality = quality;
+  let result = '';
+
+  const tryCompress = () => {
+    result = canvas.toDataURL('image/jpeg', currentQuality);
+    const sizeKB = getBase64SizeKB(result);
+
+    if (sizeKB > maxSizeKB && currentQuality > minQuality) {
+      currentQuality = Math.max(currentQuality - 0.15, minQuality);
+      tryCompress();
+    }
+  };
+
+  tryCompress();
+
+  return result;
+}
+
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.src = url;
+  });
 }

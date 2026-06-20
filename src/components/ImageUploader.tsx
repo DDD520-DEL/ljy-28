@@ -1,8 +1,10 @@
 import { useRef, useState, useCallback, DragEvent, ChangeEvent } from 'react';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, Image as ImageIcon, Crop } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { compressImage, formatFileSize, getBase64SizeKB } from '@/utils';
+import { fileToBase64, getCroppedImage, formatFileSize, getBase64SizeKB } from '@/utils';
 import { toast } from './Toast';
+import ImageCropModal from './ImageCropModal';
+import type { Area } from 'react-easy-crop';
 
 interface ImageUploaderProps {
   value: string;
@@ -26,6 +28,7 @@ export default function ImageUploader({
   const [isCompressing, setIsCompressing] = useState(false);
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [compressedSize, setCompressedSize] = useState<number | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -36,10 +39,26 @@ export default function ImageUploader({
 
       const originalSizeKB = file.size / 1024;
       setOriginalSize(originalSizeKB);
+
+      try {
+        const base64 = await fileToBase64(file);
+        setCropImageSrc(base64);
+      } catch {
+        toast.error('图片读取失败，请换一张图片试试');
+      }
+    },
+    []
+  );
+
+  const handleCropConfirm = useCallback(
+    async (croppedAreaPixels: Area) => {
+      if (!cropImageSrc) return;
+
+      setCropImageSrc(null);
       setIsCompressing(true);
 
       try {
-        const compressed = await compressImage(file, {
+        const compressed = await getCroppedImage(cropImageSrc, croppedAreaPixels, {
           maxWidth: 800,
           maxHeight: 800,
           quality: 0.7,
@@ -51,16 +70,16 @@ export default function ImageUploader({
         setCompressedSize(finalSizeKB);
         onChange(compressed);
 
-        const savedPercent = originalSizeKB > 0 
-          ? Math.round((1 - finalSizeKB / originalSizeKB) * 100) 
+        const savedPercent = originalSize && originalSize > 0
+          ? Math.round((1 - finalSizeKB / originalSize) * 100)
           : 0;
-        
+
         if (savedPercent > 10) {
           toast.success(
-            `图片已压缩 ${savedPercent}%（${formatFileSize(originalSizeKB)} → ${formatFileSize(finalSizeKB)}）`
+            `裁剪并压缩 ${savedPercent}%（${formatFileSize(originalSize ?? 0)} → ${formatFileSize(finalSizeKB)}）`
           );
         } else {
-          toast.success('图片上传成功');
+          toast.success('图片裁剪完成');
         }
       } catch (e) {
         console.error('图片处理失败:', e);
@@ -69,8 +88,15 @@ export default function ImageUploader({
         setIsCompressing(false);
       }
     },
-    [onChange, maxSizeKB]
+    [cropImageSrc, onChange, maxSizeKB, originalSize]
   );
+
+  const handleCropCancel = useCallback(() => {
+    setCropImageSrc(null);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  }, []);
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -101,7 +127,7 @@ export default function ImageUploader({
   );
 
   const handleClick = () => {
-    if (!isCompressing) {
+    if (!isCompressing && !cropImageSrc) {
       inputRef.current?.click();
     }
   };
@@ -113,6 +139,13 @@ export default function ImageUploader({
     setCompressedSize(null);
     if (inputRef.current) {
       inputRef.current.value = '';
+    }
+  };
+
+  const handleRecrop = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (value) {
+      setCropImageSrc(value);
     }
   };
 
@@ -157,6 +190,13 @@ export default function ImageUploader({
             >
               <X className="w-4 h-4" />
             </button>
+            <button
+              onClick={handleRecrop}
+              className="absolute top-3 right-14 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm text-kraft-700 flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
+              title="重新裁剪"
+            >
+              <Crop className="w-4 h-4" />
+            </button>
             {compressedSize !== null && (
               <div className="absolute bottom-3 left-3 px-2.5 py-1.5 rounded-lg bg-white/90 backdrop-blur-sm text-xs text-kraft-600 shadow-sm flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
@@ -172,7 +212,7 @@ export default function ImageUploader({
             <p className="text-sm font-medium text-kraft-700 mb-1">{placeholder}</p>
             <p className="text-xs text-kraft-400 mb-2">支持 JPG、PNG、GIF 格式</p>
             <p className="text-xs text-forest-600 bg-forest-50 inline-block px-2 py-0.5 rounded-full">
-              自动压缩至 {maxSizeKB}KB 以内
+              裁剪并压缩至 {maxSizeKB}KB 以内
             </p>
           </div>
         )}
@@ -184,6 +224,14 @@ export default function ImageUploader({
           className="hidden"
         />
       </div>
+
+      {cropImageSrc && (
+        <ImageCropModal
+          imageSrc={cropImageSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 }
