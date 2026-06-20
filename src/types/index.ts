@@ -28,6 +28,19 @@ export interface BoxRecord {
   difficulty: DifficultyType;
   createdAt: string;
   updatedAt: string;
+  isPublished?: boolean;
+  likes: number;
+  likedBy: string[];
+  authorId: string;
+  authorName: string;
+  publishedAt?: string;
+}
+
+export type SortType = 'latest' | 'popular';
+
+export interface CommunityFilter {
+  category: CategoryType | 'all';
+  sortBy: SortType;
 }
 
 export interface CategoryInfo {

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Edit2,
@@ -13,17 +13,24 @@ import {
   Star,
   Wrench,
   Award,
+  Share2,
+  Heart,
+  User,
 } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORY_LABELS, COMPLETENESS_LABELS, DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import CompareSlider from '@/components/CompareSlider';
 import Timeline from '@/components/Timeline';
-import { formatDate } from '@/utils';
+import { formatDate, formatDateRelative } from '@/utils';
+import { cn } from '@/lib/utils';
 
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRecordById, deleteRecord, init, isLoaded, toggleFavorite, isFavorite } = useBoxStore();
+  const [searchParams] = useSearchParams();
+  const fromCommunity = searchParams.get('from') === 'community';
+  const { getRecordById, deleteRecord, init, isLoaded, toggleFavorite, isFavorite, togglePublish, toggleLike, hasLiked, currentUserId } = useBoxStore();
+  const [publishSwitch, setPublishSwitch] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -32,12 +39,36 @@ export default function Detail() {
   }, [init, isLoaded]);
 
   const record = id ? getRecordById(id) : undefined;
+  const isOwner = record && record.authorId === currentUserId;
+  const liked = record ? hasLiked(record.id) : false;
+
+  useEffect(() => {
+    if (record) {
+      setPublishSwitch(!!record.isPublished);
+    }
+  }, [record?.isPublished]);
 
   useEffect(() => {
     if (isLoaded && id && !record) {
-      navigate('/');
+      navigate(fromCommunity ? '/discover' : '/');
     }
-  }, [isLoaded, id, record, navigate]);
+  }, [isLoaded, id, record, navigate, fromCommunity]);
+
+  const handleBack = () => {
+    if (fromCommunity) {
+      navigate('/discover');
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const handlePublishToggle = () => {
+    if (!record) return;
+    const success = togglePublish(record.id);
+    if (success) {
+      setPublishSwitch(!publishSwitch);
+    }
+  };
 
   if (!record) {
     return (
@@ -64,13 +95,26 @@ export default function Detail() {
       <header className="sticky top-0 z-20 bg-paper-cream/80 backdrop-blur-md border-b border-kraft-100">
         <div className="container py-4 flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="flex items-center gap-2 text-kraft-600 hover:text-kraft-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">返回</span>
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => record && toggleLike(record.id)}
+              className={cn(
+                'p-2 rounded-lg transition-colors flex items-center gap-1.5',
+                liked
+                  ? 'text-rose-500 bg-rose-50'
+                  : 'text-kraft-500 hover:text-rose-500 hover:bg-rose-50'
+              )}
+              title={liked ? '取消点赞' : '点赞'}
+            >
+              <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
+              <span className="text-sm font-medium">{record?.likes || 0}</span>
+            </button>
             <button
               onClick={() => record && toggleFavorite(record.id)}
               className={`p-2 rounded-lg transition-colors ${
@@ -82,20 +126,24 @@ export default function Detail() {
             >
               <Star className={`w-5 h-5 ${record && isFavorite(record.id) ? 'fill-current' : ''}`} />
             </button>
-            <button
-              onClick={() => navigate(`/record/${record.id}`)}
-              className="p-2 text-kraft-500 hover:text-kraft-700 hover:bg-kraft-100 rounded-lg transition-colors"
-              title="编辑"
-            >
-              <Edit2 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleDelete}
-              className="p-2 text-kraft-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="删除"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => navigate(`/record/${record.id}`)}
+                className="p-2 text-kraft-500 hover:text-kraft-700 hover:bg-kraft-100 rounded-lg transition-colors"
+                title="编辑"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={handleDelete}
+                className="p-2 text-kraft-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                title="删除"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -110,6 +158,23 @@ export default function Detail() {
               <span>{DIFFICULTY_ICONS[record.difficulty]}</span>
               {DIFFICULTY_LABELS[record.difficulty]}
             </span>
+            {record.isPublished && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-forest-50 text-forest-700 border border-forest-200">
+                <Share2 className="w-3.5 h-3.5" />
+                已发布
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-kraft-100 flex items-center justify-center">
+              <User className="w-5 h-5 text-kraft-500" />
+            </div>
+            <div>
+              <p className="font-medium text-kraft-800">{record.authorName}</p>
+              <p className="text-xs text-kraft-400">
+                {record.publishedAt ? `发布于 ${formatDateRelative(record.publishedAt)}` : `创建于 ${formatDateRelative(record.createdAt)}`}
+              </p>
+            </div>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold font-display text-kraft-800 mb-2">
             {record.name}
@@ -226,6 +291,49 @@ export default function Detail() {
           </section>
         )}
 
+        {isOwner && (
+          <section className="mb-6 opacity-0 animate-fade-in-up" style={{ animationDelay: '0.48s' }}>
+            <div className="card-paper p-5 border-2 border-dashed border-forest-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-forest-50 flex items-center justify-center">
+                    <Share2 className="w-6 h-6 text-forest-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-kraft-800 flex items-center gap-2">
+                      发布到社区广场
+                      {publishSwitch && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-forest-100 text-forest-700">
+                          已开启
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-sm text-kraft-500 mt-0.5">
+                      {publishSwitch
+                        ? '你的创意正在社区广场展示，其他用户可以浏览和点赞'
+                        : '开启后，这条改造记录将对所有用户可见'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handlePublishToggle}
+                  className={cn(
+                    'relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-forest-400 focus:ring-offset-2',
+                    publishSwitch ? 'bg-forest-500' : 'bg-kraft-200'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200',
+                      publishSwitch ? 'translate-x-6' : 'translate-x-1'
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="opacity-0 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
           <div className="card-kraft p-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -239,12 +347,14 @@ export default function Detail() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => navigate(`/record/${record.id}`)}
-              className="btn-primary py-2 px-4 text-sm"
-            >
-              编辑记录
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => navigate(`/record/${record.id}`)}
+                className="btn-primary py-2 px-4 text-sm"
+              >
+                编辑记录
+              </button>
+            )}
           </div>
         </section>
       </main>

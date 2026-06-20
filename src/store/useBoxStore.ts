@@ -9,6 +9,7 @@ import type {
   User,
   SyncStatus,
   SyncConflict,
+  SortType,
 } from '@/types';
 import { CATEGORY_LABELS } from '@/constants';
 import {
@@ -16,6 +17,9 @@ import {
   saveToStorage,
   STORAGE_KEY,
   FAVORITES_STORAGE_KEY,
+  LIKED_STORAGE_KEY,
+  CURRENT_USER_ID_KEY,
+  CURRENT_USER_NAME_KEY,
   generateId,
   StorageQuotaExceededError,
 } from '@/utils';
@@ -40,6 +44,11 @@ interface BoxStore {
   searchKeyword: string;
   difficultyFilter: DifficultyType | 'all';
   favorites: string[];
+  likedRecords: string[];
+  currentUserId: string;
+  currentUserName: string;
+  communityCategory: CategoryType | 'all';
+  communitySortBy: SortType;
   isLoaded: boolean;
   isSaving: boolean;
   user: User | null;
@@ -49,7 +58,7 @@ interface BoxStore {
   pendingSyncDirection: 'upload' | 'download' | null;
 
   init: () => void;
-  addRecord: (record: Omit<BoxRecord, 'id' | 'createdAt' | 'updatedAt'>) => boolean;
+  addRecord: (record: Omit<BoxRecord, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'likedBy' | 'authorId' | 'authorName'>) => boolean;
   updateRecord: (id: string, record: Partial<BoxRecord>) => boolean;
   deleteRecord: (id: string) => void;
   batchDeleteRecords: (ids: string[]) => void;
@@ -62,6 +71,13 @@ interface BoxStore {
   getTrendData: (range: TrendRangeType) => TrendData;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+
+  setCommunityCategory: (category: CategoryType | 'all') => void;
+  setCommunitySortBy: (sortBy: SortType) => void;
+  getPublishedRecords: () => BoxRecord[];
+  togglePublish: (id: string) => boolean;
+  toggleLike: (id: string) => void;
+  hasLiked: (id: string) => boolean;
 
   login: (name: string) => Promise<void>;
   logout: () => void;
@@ -78,6 +94,11 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   searchKeyword: '',
   difficultyFilter: 'all',
   favorites: [],
+  likedRecords: [],
+  currentUserId: '',
+  currentUserName: '',
+  communityCategory: 'all',
+  communitySortBy: 'latest',
   isLoaded: false,
   isSaving: false,
   user: null,
@@ -89,8 +110,20 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   init: () => {
     const saved = loadFromStorage<BoxRecord[]>(STORAGE_KEY, []);
     const savedFavorites = loadFromStorage<string[]>(FAVORITES_STORAGE_KEY, []);
+    const savedLiked = loadFromStorage<string[]>(LIKED_STORAGE_KEY, []);
+    const savedUserId = loadFromStorage<string>(CURRENT_USER_ID_KEY, '');
+    const savedUserName = loadFromStorage<string>(CURRENT_USER_NAME_KEY, '');
     const user = getCurrentUser();
     const lastSyncAt = getLastSyncTime();
+
+    let userId = savedUserId;
+    let userName = savedUserName;
+    if (!userId) {
+      userId = generateId();
+      userName = '纸箱创意家';
+      saveToStorage(CURRENT_USER_ID_KEY, userId);
+      saveToStorage(CURRENT_USER_NAME_KEY, userName);
+    }
 
     if (saved.length === 0) {
       try {
@@ -98,6 +131,9 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         set({
           records: MOCK_RECORDS,
           favorites: savedFavorites,
+          likedRecords: savedLiked,
+          currentUserId: userId,
+          currentUserName: userName,
           isLoaded: true,
           user,
           lastSyncAt,
@@ -109,15 +145,28 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         set({
           records: MOCK_RECORDS.slice(0, 3),
           favorites: savedFavorites,
+          likedRecords: savedLiked,
+          currentUserId: userId,
+          currentUserName: userName,
           isLoaded: true,
           user,
           lastSyncAt,
         });
       }
     } else {
+      const updatedRecords = saved.map(record => ({
+        likes: record.likes ?? 0,
+        likedBy: record.likedBy ?? [],
+        authorId: record.authorId ?? userId,
+        authorName: record.authorName ?? userName,
+        ...record,
+      }));
       set({
-        records: saved,
+        records: updatedRecords,
         favorites: savedFavorites,
+        likedRecords: savedLiked,
+        currentUserId: userId,
+        currentUserName: userName,
         isLoaded: true,
         user,
         lastSyncAt,
@@ -127,11 +176,17 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   addRecord: (record) => {
     const now = new Date().toISOString();
+    const { currentUserId, currentUserName } = get();
     const newRecord: BoxRecord = {
       ...record,
       id: generateId(),
       createdAt: now,
       updatedAt: now,
+      isPublished: false,
+      likes: 0,
+      likedBy: [],
+      authorId: currentUserId,
+      authorName: currentUserName,
     };
     const newRecords = [newRecord, ...get().records];
     
@@ -534,5 +589,114 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     const user = getCurrentUser();
     const lastSyncAt = getLastSyncTime();
     set({ user, lastSyncAt });
+  },
+
+  setCommunityCategory: (category) => {
+    set({ communityCategory: category });
+  },
+
+  setCommunitySortBy: (sortBy) => {
+    set({ communitySortBy: sortBy });
+  },
+
+  getPublishedRecords: () => {
+    const { records, communityCategory, communitySortBy } = get();
+    let result = records.filter(r => r.isPublished);
+
+    if (communityCategory !== 'all') {
+      result = result.filter(r => r.category === communityCategory);
+    }
+
+    if (communitySortBy === 'popular') {
+      result = [...result].sort((a, b) => b.likes - a.likes);
+    } else {
+      result = [...result].sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
+    }
+
+    return result;
+  },
+
+  togglePublish: (id) => {
+    const { records, currentUserId } = get();
+    const record = records.find(r => r.id === id);
+    
+    if (!record) return false;
+    if (record.authorId !== currentUserId) {
+      toast.error('只能发布自己的记录');
+      return false;
+    }
+
+    const now = new Date().toISOString();
+    const newRecords = records.map(r =>
+      r.id === id
+        ? {
+            ...r,
+            isPublished: !r.isPublished,
+            publishedAt: !r.isPublished ? now : r.publishedAt,
+            updatedAt: now,
+          }
+        : r
+    );
+
+    try {
+      saveToStorage(STORAGE_KEY, newRecords);
+      set({ records: newRecords });
+      const published = !record.isPublished;
+      toast.success(published ? '已发布到社区广场' : '已从社区广场下架');
+      return true;
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.error('存储空间不足，操作失败');
+      } else {
+        toast.error('操作失败，请重试');
+      }
+      return false;
+    }
+  },
+
+  toggleLike: (id) => {
+    const { records, likedRecords, currentUserId } = get();
+    const record = records.find(r => r.id === id);
+    
+    if (!record) return;
+
+    const hasLiked = likedRecords.includes(id);
+    let newLikedRecords: string[];
+    let newLikes: number;
+    let newLikedBy: string[];
+
+    if (hasLiked) {
+      newLikedRecords = likedRecords.filter(lid => lid !== id);
+      newLikes = Math.max(0, record.likes - 1);
+      newLikedBy = record.likedBy.filter(uid => uid !== currentUserId);
+      toast.success('已取消点赞');
+    } else {
+      newLikedRecords = [...likedRecords, id];
+      newLikes = record.likes + 1;
+      newLikedBy = [...record.likedBy, currentUserId];
+      toast.success('点赞成功！');
+    }
+
+    const newRecords = records.map(r =>
+      r.id === id
+        ? { ...r, likes: newLikes, likedBy: newLikedBy }
+        : r
+    );
+
+    try {
+      saveToStorage(STORAGE_KEY, newRecords);
+      saveToStorage(LIKED_STORAGE_KEY, newLikedRecords);
+      set({ records: newRecords, likedRecords: newLikedRecords });
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.error('存储空间不足，点赞失败');
+      } else {
+        toast.error('点赞失败，请重试');
+      }
+    }
+  },
+
+  hasLiked: (id) => {
+    return get().likedRecords.includes(id);
   },
 }));
