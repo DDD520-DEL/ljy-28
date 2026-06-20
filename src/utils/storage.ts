@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'box_creative_log_records';
+const FAVORITES_STORAGE_KEY = 'box_creative_log_favorites';
 
 export class StorageQuotaExceededError extends Error {
   constructor(message: string) {
@@ -144,4 +145,4 @@ export function checkStorageSpace(additionalBytes: number): {
   return { canSave, availableBytes, message };
 }
 
-export { STORAGE_KEY };
+export { STORAGE_KEY, FAVORITES_STORAGE_KEY };

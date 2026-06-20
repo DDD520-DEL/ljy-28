@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { CATEGORIES } from '@/constants';
 import {
   Grid3x3,
@@ -8,11 +9,12 @@ import {
   Flower2,
   LayoutGrid,
   Lightbulb,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CategoryType } from '@/types';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, ComponentType<{ className?: string }>> = {
   Grid3x3,
   Archive,
   Cat,
@@ -21,11 +23,12 @@ const iconMap: Record<string, any> = {
   Flower2,
   LayoutGrid,
   Lightbulb,
+  Star,
 };
 
 interface CategoryTabsProps {
-  activeCategory: CategoryType | 'all';
-  onCategoryChange: (category: CategoryType | 'all') => void;
+  activeCategory: CategoryType | 'all' | 'favorites';
+  onCategoryChange: (category: CategoryType | 'all' | 'favorites') => void;
   counts?: Record<string, number>;
 }
 
@@ -71,6 +74,37 @@ export default function CategoryTabs({
           </button>
         );
       })}
+      {(() => {
+        const isActive = activeCategory === 'favorites';
+        const count = counts?.['favorites'] ?? 0;
+        return (
+          <button
+            key="favorites"
+            onClick={() => onCategoryChange('favorites')}
+            className={cn(
+              'flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full',
+              'text-sm font-medium transition-all duration-200',
+              'border whitespace-nowrap',
+              isActive
+                ? 'bg-amber-500 text-white border-amber-500 shadow-paper'
+                : 'bg-paper-white text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-300'
+            )}
+          >
+            <Star className={`w-4 h-4 ${isActive ? 'fill-current' : ''}`} />
+            <span>我的收藏</span>
+            <span
+              className={cn(
+                'text-xs px-1.5 py-0.5 rounded-full',
+                isActive
+                  ? 'bg-white/20 text-white'
+                  : 'bg-amber-100 text-amber-500'
+              )}
+            >
+              {count}
+            </span>
+          </button>
+        );
+      })()}
     </div>
   );
 }

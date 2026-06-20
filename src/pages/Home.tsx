@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import StatCard from '@/components/StatCard';
 import CategoryTabs from '@/components/CategoryTabs';
@@ -9,7 +9,7 @@ import type { CategoryType } from '@/types';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { records, currentCategory, setCategory, getFilteredRecords, getStats, init, isLoaded } =
+  const { records, currentCategory, setCategory, getFilteredRecords, getStats, init, isLoaded, favorites } =
     useBoxStore();
 
   useEffect(() => {
@@ -22,14 +22,14 @@ export default function Home() {
   const stats = useMemo(() => getStats(), [records, getStats]);
 
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: stats.total };
+    const counts: Record<string, number> = { all: stats.total, favorites: favorites.length };
     Object.entries(stats.categoryStats).forEach(([key, value]) => {
       counts[key] = value;
     });
     return counts;
-  }, [stats]);
+  }, [stats, favorites]);
 
-  const handleCategoryChange = (category: CategoryType | 'all') => {
+  const handleCategoryChange = (category: CategoryType | 'all' | 'favorites') => {
     setCategory(category);
   };
 
@@ -124,21 +124,29 @@ export default function Home() {
         ) : (
           <div className="card-kraft p-12 text-center">
             <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-kraft-100 flex items-center justify-center">
-              <Package className="w-10 h-10 text-kraft-400" />
+              {currentCategory === 'favorites' ? (
+                <Star className="w-10 h-10 text-kraft-400" />
+              ) : (
+                <Package className="w-10 h-10 text-kraft-400" />
+              )}
             </div>
             <h3 className="text-lg font-semibold text-kraft-700 mb-2">
-              还没有改造记录
+              {currentCategory === 'favorites' ? '还没有收藏的记录' : '还没有改造记录'}
             </h3>
             <p className="text-kraft-500 mb-6 max-w-sm mx-auto">
-              开始记录你的第一个纸箱改造项目吧，让废弃的纸箱焕发新生！
+              {currentCategory === 'favorites'
+                ? '点击卡片右上角的星标，收藏你喜欢的创意作品吧！'
+                : '开始记录你的第一个纸箱改造项目吧，让废弃的纸箱焕发新生！'}
             </p>
-            <button
-              onClick={() => navigate('/record')}
-              className="btn-primary inline-flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              新建记录
-            </button>
+            {currentCategory !== 'favorites' && (
+              <button
+                onClick={() => navigate('/record')}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                新建记录
+              </button>
+            )}
           </div>
         )}
       </main>

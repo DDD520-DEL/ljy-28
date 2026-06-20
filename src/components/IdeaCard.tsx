@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_LABELS } from '@/constants';
 import { formatDateRelative } from '@/utils';
-import { Ruler, Layers, ArrowRight } from 'lucide-react';
+import { Ruler, Layers, ArrowRight, Star } from 'lucide-react';
 import type { BoxRecord } from '@/types';
 import { cn } from '@/lib/utils';
+import { useBoxStore } from '@/store/useBoxStore';
 
 interface IdeaCardProps {
   record: BoxRecord;
@@ -13,10 +14,17 @@ interface IdeaCardProps {
 
 export default function IdeaCard({ record, index = 0, className }: IdeaCardProps) {
   const navigate = useNavigate();
+  const { isFavorite, toggleFavorite } = useBoxStore();
   const categoryLabel = CATEGORY_LABELS[record.category];
+  const favorited = isFavorite(record.id);
 
   const handleClick = () => {
     navigate(`/detail/${record.id}`);
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(record.id);
   };
 
   return (
@@ -41,6 +49,24 @@ export default function IdeaCard({ record, index = 0, className }: IdeaCardProps
             {categoryLabel}
           </span>
         </div>
+        {favorited && (
+          <button
+            onClick={handleFavoriteClick}
+            className="absolute top-3 right-3 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-kraft-100 text-amber-500 hover:bg-white transition-colors"
+            title="取消收藏"
+          >
+            <Star className="w-4 h-4 fill-current" />
+          </button>
+        )}
+        {!favorited && (
+          <button
+            onClick={handleFavoriteClick}
+            className="absolute top-3 right-3 p-1.5 rounded-full bg-white/0 backdrop-blur-sm shadow-sm border border-transparent text-transparent group-hover:bg-white/90 group-hover:text-kraft-400 group-hover:border-kraft-100 hover:text-amber-500 transition-all duration-300"
+            title="收藏"
+          >
+            <Star className="w-4 h-4" />
+          </button>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-kraft-700 shadow-md">

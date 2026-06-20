@@ -10,6 +10,7 @@ import {
   Truck,
   CheckSquare,
   Calendar,
+  Star,
 } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import { CATEGORY_LABELS, COMPLETENESS_LABELS } from '@/constants';
@@ -20,7 +21,7 @@ import { formatDate } from '@/utils';
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRecordById, deleteRecord, init, isLoaded } = useBoxStore();
+  const { getRecordById, deleteRecord, init, isLoaded, toggleFavorite, isFavorite } = useBoxStore();
 
   useEffect(() => {
     if (!isLoaded) {
@@ -68,6 +69,17 @@ export default function Detail() {
             <span className="font-medium">返回</span>
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => record && toggleFavorite(record.id)}
+              className={`p-2 rounded-lg transition-colors ${
+                record && isFavorite(record.id)
+                  ? 'text-amber-500 hover:bg-amber-50'
+                  : 'text-kraft-500 hover:text-amber-500 hover:bg-amber-50'
+              }`}
+              title={record && isFavorite(record.id) ? '取消收藏' : '收藏'}
+            >
+              <Star className={`w-5 h-5 ${record && isFavorite(record.id) ? 'fill-current' : ''}`} />
+            </button>
             <button
               onClick={() => navigate(`/record/${record.id}`)}
               className="p-2 text-kraft-500 hover:text-kraft-700 hover:bg-kraft-100 rounded-lg transition-colors"

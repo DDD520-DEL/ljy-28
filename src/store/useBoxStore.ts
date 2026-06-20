@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import type { BoxRecord, CategoryType, StatsData } from '@/types';
-import { loadFromStorage, saveToStorage, STORAGE_KEY, generateId, StorageQuotaExceededError } from '@/utils';
+import { loadFromStorage, saveToStorage, STORAGE_KEY, FAVORITES_STORAGE_KEY, generateId, StorageQuotaExceededError } from '@/utils';
 import { MOCK_RECORDS } from '@/data/mockData';
 import { toast } from '@/components/Toast';
 
 interface BoxStore {
   records: BoxRecord[];
-  currentCategory: CategoryType | 'all';
+  currentCategory: CategoryType | 'all' | 'favorites';
+  favorites: string[];
   isLoaded: boolean;
   isSaving: boolean;
   
@@ -15,31 +16,35 @@ interface BoxStore {
   updateRecord: (id: string, record: Partial<BoxRecord>) => boolean;
   deleteRecord: (id: string) => void;
   getRecordById: (id: string) => BoxRecord | undefined;
-  setCategory: (category: CategoryType | 'all') => void;
+  setCategory: (category: CategoryType | 'all' | 'favorites') => void;
   getFilteredRecords: () => BoxRecord[];
   getStats: () => StatsData;
+  toggleFavorite: (id: string) => void;
+  isFavorite: (id: string) => boolean;
 }
 
 export const useBoxStore = create<BoxStore>((set, get) => ({
   records: [],
   currentCategory: 'all',
+  favorites: [],
   isLoaded: false,
   isSaving: false,
 
   init: () => {
     const saved = loadFromStorage<BoxRecord[]>(STORAGE_KEY, []);
+    const savedFavorites = loadFromStorage<string[]>(FAVORITES_STORAGE_KEY, []);
     if (saved.length === 0) {
       try {
         saveToStorage(STORAGE_KEY, MOCK_RECORDS);
-        set({ records: MOCK_RECORDS, isLoaded: true });
+        set({ records: MOCK_RECORDS, favorites: savedFavorites, isLoaded: true });
       } catch (e) {
         if (e instanceof StorageQuotaExceededError) {
           toast.warning('初始数据加载时存储空间不足，部分功能可能受限');
         }
-        set({ records: MOCK_RECORDS.slice(0, 3), isLoaded: true });
+        set({ records: MOCK_RECORDS.slice(0, 3), favorites: savedFavorites, isLoaded: true });
       }
     } else {
-      set({ records: saved, isLoaded: true });
+      set({ records: saved, favorites: savedFavorites, isLoaded: true });
     }
   },
 
@@ -98,15 +103,17 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   deleteRecord: (id) => {
     const newRecords = get().records.filter((r) => r.id !== id);
+    const newFavorites = get().favorites.filter((fid) => fid !== id);
     
     try {
       saveToStorage(STORAGE_KEY, newRecords);
-      set({ records: newRecords });
+      saveToStorage(FAVORITES_STORAGE_KEY, newFavorites);
+      set({ records: newRecords, favorites: newFavorites });
       toast.success('记录已删除');
     } catch (e) {
       if (e instanceof StorageQuotaExceededError) {
         // 删除操作应该不会触发存储空间不足，但以防万一
-        set({ records: newRecords });
+        set({ records: newRecords, favorites: newFavorites });
         toast.warning('记录已从列表移除，但存储更新异常');
       } else {
         toast.error('删除失败，请重试');
@@ -123,9 +130,37 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   },
 
   getFilteredRecords: () => {
-    const { records, currentCategory } = get();
+    const { records, currentCategory, favorites } = get();
     if (currentCategory === 'all') return records;
+    if (currentCategory === 'favorites') return records.filter((r) => favorites.includes(r.id));
     return records.filter((r) => r.category === currentCategory);
+  },
+
+  toggleFavorite: (id) => {
+    const { favorites } = get();
+    const isFav = favorites.includes(id);
+    let newFavorites: string[];
+    if (isFav) {
+      newFavorites = favorites.filter((fid) => fid !== id);
+      toast.success('已取消收藏');
+    } else {
+      newFavorites = [...favorites, id];
+      toast.success('已收藏');
+    }
+    try {
+      saveToStorage(FAVORITES_STORAGE_KEY, newFavorites);
+      set({ favorites: newFavorites });
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.error('存储空间不足，收藏失败');
+      } else {
+        toast.error('收藏失败，请重试');
+      }
+    }
+  },
+
+  isFavorite: (id) => {
+    return get().favorites.includes(id);
   },
 
   getStats: () => {
