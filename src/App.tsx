@@ -6,6 +6,7 @@ import Detail from "@/pages/Detail";
 import Discover from "@/pages/Discover";
 import Settings from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
+import BoxSizeRecommender from "@/pages/BoxSizeRecommender";
 import { ToastContainer } from "@/components/Toast";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
@@ -55,6 +56,7 @@ function AppContent() {
       <Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/" element={<Home />} />
+        <Route path="/box-size-recommender" element={<BoxSizeRecommender />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/record" element={<Record />} />
         <Route path="/record/:id" element={<Record />} />
