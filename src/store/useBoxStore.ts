@@ -687,16 +687,38 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   clearAllData: () => {
     const LAST_SYNC_KEY = 'box_creative_log_last_sync';
     const CLOUD_USER_KEY = 'box_creative_log_cloud_user';
-    
-    removeFromStorage(STORAGE_KEY);
-    removeFromStorage(FAVORITES_STORAGE_KEY);
-    removeFromStorage(LIKED_STORAGE_KEY);
-    removeFromStorage(CURRENT_USER_ID_KEY);
-    removeFromStorage(CURRENT_USER_NAME_KEY);
-    removeFromStorage(VERSIONS_STORAGE_KEY);
-    removeFromStorage(LAST_SYNC_KEY);
-    removeFromStorage(CLOUD_USER_KEY);
-    removeFromStorage('theme');
+    const CLOUD_STORAGE_KEY = 'box_creative_log_cloud';
+    const USER_STORAGE_KEY = 'box_creative_log_user';
+    const THEME_KEY = 'theme';
+
+    const allKnownKeys = [
+      STORAGE_KEY,
+      FAVORITES_STORAGE_KEY,
+      LIKED_STORAGE_KEY,
+      CURRENT_USER_ID_KEY,
+      CURRENT_USER_NAME_KEY,
+      VERSIONS_STORAGE_KEY,
+      LAST_SYNC_KEY,
+      CLOUD_USER_KEY,
+      CLOUD_STORAGE_KEY,
+      USER_STORAGE_KEY,
+      THEME_KEY,
+    ];
+
+    allKnownKeys.forEach((key) => removeFromStorage(key));
+
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('box_creative_log_') || key === 'theme')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // ignore
+    }
 
     set({
       records: [],
@@ -709,8 +731,12 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       syncConflicts: [],
       lastSyncAt: null,
       pendingSyncDirection: null,
+      syncStatus: 'idle',
       isLoaded: true,
     });
+
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
 
     toast.success('已清除全部本地数据');
   },
