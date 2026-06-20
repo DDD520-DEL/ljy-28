@@ -33,11 +33,9 @@ export default function Settings() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       clearAllData();
-      setShowClearDialog(false);
-      navigate('/', { replace: true });
+      window.location.href = '/';
     } catch {
       toast.error('清除数据失败，请重试');
-    } finally {
       setIsClearing(false);
     }
   };

@@ -702,7 +702,6 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       CLOUD_USER_KEY,
       CLOUD_STORAGE_KEY,
       USER_STORAGE_KEY,
-      THEME_KEY,
     ];
 
     allKnownKeys.forEach((key) => removeFromStorage(key));
@@ -711,7 +710,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && (key.startsWith('box_creative_log_') || key === 'theme')) {
+        if (key && key.startsWith('box_creative_log_')) {
           keysToRemove.push(key);
         }
       }
@@ -719,6 +718,10 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     } catch {
       // ignore
     }
+
+    localStorage.setItem(THEME_KEY, 'light');
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
 
     set({
       records: [],
@@ -734,11 +737,6 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       syncStatus: 'idle',
       isLoaded: true,
     });
-
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-
-    toast.success('已清除全部本地数据');
   },
 
   refreshSyncStatus: () => {
