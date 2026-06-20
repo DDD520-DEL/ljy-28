@@ -58,3 +58,18 @@ export interface StatsData {
   savedBoxes: number;
   categoryStats: Record<CategoryType, number>;
 }
+
+export type TrendRangeType = 'week' | 'month' | 'all';
+
+export interface TrendCategoryData {
+  category: CategoryType;
+  label: string;
+  count: number;
+}
+
+export interface TrendData {
+  range: TrendRangeType;
+  categories: TrendCategoryData[];
+  maxCount: number;
+  total: number;
+}

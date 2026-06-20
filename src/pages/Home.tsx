@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award } from 'lucide-react';
 import { useBoxStore } from '@/store/useBoxStore';
 import StatCard from '@/components/StatCard';
+import TrendChart from '@/components/TrendChart';
 import CategoryTabs from '@/components/CategoryTabs';
 import IdeaCard from '@/components/IdeaCard';
 import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
@@ -61,7 +62,7 @@ export default function Home() {
     return result;
   }, [records, currentCategory, searchKeyword, difficultyFilter, favorites]);
 
-  const stats = useMemo(() => getStats(), [getStats]);
+  const stats = useMemo(() => getStats(), [getStats, records]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: stats.total, favorites: favorites.length };
@@ -213,6 +214,8 @@ export default function Home() {
             delay={400}
           />
         </section>
+
+        <TrendChart />
 
         <section className="mb-6">
           <div className="flex items-center justify-between mb-4">

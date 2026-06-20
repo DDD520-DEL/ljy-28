@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { BoxRecord, CategoryType, DifficultyType, StatsData } from '@/types';
+import type { BoxRecord, CategoryType, DifficultyType, StatsData, TrendRangeType, TrendData } from '@/types';
+import { CATEGORY_LABELS } from '@/constants';
 import { loadFromStorage, saveToStorage, STORAGE_KEY, FAVORITES_STORAGE_KEY, generateId, StorageQuotaExceededError } from '@/utils';
 import { MOCK_RECORDS } from '@/data/mockData';
 import { toast } from '@/components/Toast';
@@ -24,6 +25,7 @@ interface BoxStore {
   setDifficultyFilter: (difficulty: DifficultyType | 'all') => void;
   getFilteredRecords: () => BoxRecord[];
   getStats: () => StatsData;
+  getTrendData: (range: TrendRangeType) => TrendData;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
 }
@@ -234,6 +236,55 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
       total: records.length,
       savedBoxes: records.length,
       categoryStats,
+    };
+  },
+
+  getTrendData: (range: TrendRangeType): TrendData => {
+    const { records } = get();
+    const now = new Date();
+    let startDate: Date | null = null;
+
+    if (range === 'week') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (range === 'month') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+    }
+
+    const filteredRecords = startDate
+      ? records.filter(r => new Date(r.createdAt) >= startDate)
+      : records;
+
+    const categoryCounts: Record<CategoryType, number> = {
+      storage: 0,
+      catHouse: 0,
+      craft: 0,
+      toy: 0,
+      pot: 0,
+      display: 0,
+      other: 0,
+    };
+
+    filteredRecords.forEach(r => {
+      categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1;
+    });
+
+    const categories: CategoryType[] = ['storage', 'catHouse', 'craft', 'toy', 'pot', 'display', 'other'];
+    const trendCategories = categories.map(cat => ({
+      category: cat,
+      label: CATEGORY_LABELS[cat],
+      count: categoryCounts[cat],
+    }));
+
+    const maxCount = Math.max(...trendCategories.map(c => c.count), 1);
+    const total = filteredRecords.length;
+
+    return {
+      range,
+      categories: trendCategories,
+      maxCount,
+      total,
     };
   },
 }));
