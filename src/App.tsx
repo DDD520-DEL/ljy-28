@@ -10,6 +10,7 @@ import BoxSizeRecommender from "@/pages/BoxSizeRecommender";
 import Achievements from "@/pages/Achievements";
 import ExportPrintPage from "@/pages/ExportPrintPage";
 import ReminderSettings from "@/pages/ReminderSettings";
+import CategoryRanking from "@/pages/CategoryRanking";
 import { ToastContainer } from "@/components/Toast";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
@@ -74,6 +75,7 @@ function AppContent() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/reminder-settings" element={<ReminderSettings />} />
         <Route path="/export" element={<ExportPrintPage />} />
+        <Route path="/category-ranking" element={<CategoryRanking />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {showBottomNav && <BottomNav />}

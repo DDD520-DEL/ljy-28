@@ -250,9 +250,11 @@ export default function Home() {
             icon={Sparkles}
             label="改造类型"
             value={Object.values(stats.categoryStats).filter(v => v > 0).length}
-            subtext="种不同创意"
+            subtext="种不同创意 · 查看排行榜 ›"
             color="warm"
             delay={400}
+            clickable
+            onClick={() => navigate('/category-ranking')}
           />
         </section>
 

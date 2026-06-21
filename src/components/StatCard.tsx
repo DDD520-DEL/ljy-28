@@ -9,6 +9,8 @@ interface StatCardProps {
   color?: 'kraft' | 'forest' | 'warm';
   className?: string;
   delay?: number;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 export default function StatCard({
@@ -19,6 +21,8 @@ export default function StatCard({
   color = 'kraft',
   className,
   delay = 0,
+  onClick,
+  clickable = false,
 }: StatCardProps) {
   const colorClasses = {
     kraft: 'from-kraft-100 to-paper-cream text-kraft-700',
@@ -34,9 +38,11 @@ export default function StatCard({
 
   return (
     <div
+      onClick={onClick}
       className={cn(
         'card-kraft p-6 bg-gradient-to-br opacity-0 animate-fade-in-up',
         colorClasses[color],
+        clickable && 'cursor-pointer hover:shadow-paper-hover hover:-translate-y-0.5 transition-all duration-200',
         className
       )}
       style={{ animationDelay: `${delay}ms` }}
