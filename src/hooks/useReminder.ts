@@ -43,7 +43,10 @@ function shouldTriggerReminder(settings: ReminderSettings, now: Date): boolean {
 export function useReminder() {
   const { reminderSettings, markReminderTriggered } = useBoxStore();
   const checkIntervalRef = useRef<number | null>(null);
-  const hasTriggeredTodayRef = useRef(false);
+  const { lastTriggeredAt } = reminderSettings;
+  const hasTriggeredTodayRef = useRef<boolean>(
+    lastTriggeredAt ? isSameDay(new Date(lastTriggeredAt), new Date()) : false
+  );
 
   const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
     if (!('Notification' in window)) {
@@ -94,13 +97,12 @@ export function useReminder() {
   const checkAndTrigger = useCallback(() => {
     const now = new Date();
     
-    if (hasTriggeredTodayRef.current) {
-      const lastTriggered = reminderSettings.lastTriggeredAt;
-      if (lastTriggered) {
-        const lastDate = new Date(lastTriggered);
-        if (isSameDay(now, lastDate)) {
-          return;
-        }
+    const lastTriggered = reminderSettings.lastTriggeredAt;
+    if (lastTriggered) {
+      const lastDate = new Date(lastTriggered);
+      if (isSameDay(now, lastDate)) {
+        hasTriggeredTodayRef.current = true;
+        return;
       }
     }
 
