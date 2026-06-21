@@ -9,11 +9,13 @@ import {
   AlertTriangle,
   Package,
   Leaf,
+  Printer,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useBoxStore } from '@/store/useBoxStore';
 import { toast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
+import ExportDialog from '@/components/ExportDialog';
 
 const APP_NAME = '纸箱创意日志';
 const APP_VERSION = '0.0.0';
@@ -24,6 +26,7 @@ export default function Settings() {
   const { isDark, toggleTheme } = useTheme();
   const { clearAllData, records, favorites } = useBoxStore();
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
   const totalItems = records.length + favorites.length;
@@ -128,6 +131,15 @@ export default function Settings() {
               </div>
 
               <button
+                onClick={() => setShowExportDialog(true)}
+                disabled={records.length === 0}
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-forest-50 dark:bg-forest-900/20 text-forest-600 dark:text-forest-400 rounded-xl font-medium border border-forest-200 dark:border-forest-800 hover:bg-forest-100 dark:hover:bg-forest-900/30 hover:border-forest-300 dark:hover:border-forest-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Printer className="w-5 h-5" />
+                导出记录
+              </button>
+
+              <button
                 onClick={() => setShowClearDialog(true)}
                 className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-medium border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 hover:border-red-300 dark:hover:border-red-700 transition-all duration-200"
               >
@@ -227,6 +239,12 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      <ExportDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        records={records}
+      />
     </div>
   );
 }

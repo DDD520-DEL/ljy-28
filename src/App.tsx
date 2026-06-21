@@ -8,6 +8,7 @@ import Settings from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
 import BoxSizeRecommender from "@/pages/BoxSizeRecommender";
 import Achievements from "@/pages/Achievements";
+import ExportPrintPage from "@/pages/ExportPrintPage";
 import { ToastContainer } from "@/components/Toast";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
@@ -49,7 +50,7 @@ function OnboardingChecker() {
 
 function AppContent() {
   const location = useLocation();
-  const showBottomNav = location.pathname !== '/onboarding';
+  const showBottomNav = location.pathname !== '/onboarding' && location.pathname !== '/export';
 
   return (
     <>
@@ -64,6 +65,7 @@ function AppContent() {
         <Route path="/record/:id" element={<Record />} />
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/export" element={<ExportPrintPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {showBottomNav && <BottomNav />}
