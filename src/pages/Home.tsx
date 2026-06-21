@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench, Trophy } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench, Trophy, Bell } from 'lucide-react';
+import { useReminder } from '@/hooks/useReminder';
 import { useBoxStore } from '@/store/useBoxStore';
 import { useAchievements } from '@/hooks/useAchievements';
 import StatCard from '@/components/StatCard';
@@ -10,8 +11,8 @@ import IdeaCard from '@/components/IdeaCard';
 import SyncStatusBar from '@/components/SyncStatusBar';
 import ConflictResolver from '@/components/ConflictResolver';
 import DailyRecommend from '@/components/DailyRecommend';
-import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
-import type { CategoryType, DifficultyType } from '@/types';
+import { DIFFICULTY_OPTIONS, DIFFICULTY_LABELS } from '@/constants';
+import type { CategoryType } from '@/types';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
@@ -31,9 +32,11 @@ export default function Home() {
     batchDeleteRecords,
     syncConflicts,
     clearConflicts,
+    reminderSettings,
   } = useBoxStore();
 
   const { earnedCount, totalCount } = useAchievements();
+  const { getNextReminderText } = useReminder();
 
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -255,7 +258,7 @@ export default function Home() {
 
         <button
           onClick={() => navigate('/achievements')}
-          className="w-full mb-10 card-kraft p-4 flex items-center gap-4 hover:shadow-paper-hover hover:-translate-y-0.5 transition-all duration-200 text-left group"
+          className="w-full mb-4 card-kraft p-4 flex items-center gap-4 hover:shadow-paper-hover hover:-translate-y-0.5 transition-all duration-200 text-left group"
         >
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-paper-sm flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
             <Trophy className="w-6 h-6 text-white" />
@@ -273,6 +276,43 @@ export default function Home() {
                 style={{ width: `${totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0}%` }}
               />
             </div>
+            <span className="text-xs text-kraft-400 group-hover:text-kraft-600 transition-colors">›</span>
+          </div>
+        </button>
+
+        <button
+          onClick={() => navigate('/reminder-settings')}
+          className="w-full mb-10 card-kraft p-4 flex items-center gap-4 hover:shadow-paper-hover hover:-translate-y-0.5 transition-all duration-200 text-left group"
+        >
+          <div className={cn(
+            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-paper-sm flex-shrink-0 group-hover:scale-105 transition-transform duration-200",
+            reminderSettings.enabled
+              ? "bg-gradient-to-br from-kraft-400 to-kraft-500"
+              : "bg-gradient-to-br from-kraft-200 to-kraft-300"
+          )}>
+            <Bell className={cn(
+              "w-6 h-6",
+              reminderSettings.enabled ? "text-white" : "text-kraft-500"
+            )} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-bold text-kraft-800 mb-0.5">创意提醒</h3>
+            <p className={cn(
+              "text-sm",
+              reminderSettings.enabled ? "text-kraft-600" : "text-kraft-400"
+            )}>
+              {getNextReminderText()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className={cn(
+              "text-xs px-2.5 py-1 rounded-full font-medium",
+              reminderSettings.enabled
+                ? "bg-forest-50 text-forest-600"
+                : "bg-kraft-100 text-kraft-500"
+            )}>
+              {reminderSettings.enabled ? "已开启" : "未开启"}
+            </span>
             <span className="text-xs text-kraft-400 group-hover:text-kraft-600 transition-colors">›</span>
           </div>
         </button>

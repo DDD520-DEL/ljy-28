@@ -11,6 +11,7 @@ import type {
   SyncConflict,
   SortType,
   RecordVersion,
+  ReminderSettings,
 } from '@/types';
 import { CATEGORY_LABELS } from '@/constants';
 import {
@@ -23,6 +24,7 @@ import {
   CURRENT_USER_ID_KEY,
   CURRENT_USER_NAME_KEY,
   VERSIONS_STORAGE_KEY,
+  REMINDER_SETTINGS_KEY,
   generateId,
   StorageQuotaExceededError,
 } from '@/utils';
@@ -60,6 +62,7 @@ interface BoxStore {
   syncConflicts: SyncConflict[];
   lastSyncAt: string | null;
   pendingSyncDirection: 'upload' | 'download' | null;
+  reminderSettings: ReminderSettings;
 
   init: () => void;
   addRecord: (record: Omit<BoxRecord, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'likedBy' | 'authorId' | 'authorName'>) => boolean;
@@ -95,6 +98,10 @@ interface BoxStore {
   clearConflicts: () => void;
   refreshSyncStatus: () => void;
   clearAllData: () => void;
+  initReminderSettings: () => void;
+  updateReminderSettings: (settings: Partial<ReminderSettings>) => void;
+  getReminderSettings: () => ReminderSettings;
+  markReminderTriggered: () => void;
 }
 
 export const useBoxStore = create<BoxStore>((set, get) => ({
@@ -116,6 +123,12 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
   syncConflicts: [],
   lastSyncAt: null,
   pendingSyncDirection: null,
+  reminderSettings: {
+    enabled: false,
+    weekdays: [],
+    time: '09:00',
+    lastTriggeredAt: null,
+  },
 
   init: () => {
     const saved = loadFromStorage<BoxRecord[]>(STORAGE_KEY, []);
@@ -124,8 +137,16 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
     const savedLiked = loadFromStorage<string[]>(LIKED_STORAGE_KEY, []);
     const savedUserId = loadFromStorage<string>(CURRENT_USER_ID_KEY, '');
     const savedUserName = loadFromStorage<string>(CURRENT_USER_NAME_KEY, '');
+    const savedReminder = loadFromStorage<ReminderSettings | null>(REMINDER_SETTINGS_KEY, null);
     const user = getCurrentUser();
     const lastSyncAt = getLastSyncTime();
+    
+    const defaultReminder: ReminderSettings = {
+      enabled: false,
+      weekdays: [],
+      time: '09:00',
+      lastTriggeredAt: null,
+    };
 
     let userId = savedUserId;
     let userName = savedUserName;
@@ -149,6 +170,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
           isLoaded: true,
           user,
           lastSyncAt,
+          reminderSettings: savedReminder || defaultReminder,
         });
       } catch (e) {
         if (e instanceof StorageQuotaExceededError) {
@@ -164,6 +186,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
           isLoaded: true,
           user,
           lastSyncAt,
+          reminderSettings: savedReminder || defaultReminder,
         });
       }
     } else {
@@ -184,6 +207,7 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
         isLoaded: true,
         user,
         lastSyncAt,
+        reminderSettings: savedReminder || defaultReminder,
       });
     }
   },
@@ -852,5 +876,46 @@ export const useBoxStore = create<BoxStore>((set, get) => ({
 
   hasLiked: (id) => {
     return get().likedRecords.includes(id);
+  },
+
+  initReminderSettings: () => {
+    const saved = loadFromStorage<ReminderSettings | null>(REMINDER_SETTINGS_KEY, null);
+    if (saved) {
+      set({ reminderSettings: saved });
+    }
+  },
+
+  updateReminderSettings: (settings) => {
+    const { reminderSettings } = get();
+    const newSettings = { ...reminderSettings, ...settings };
+    try {
+      saveToStorage(REMINDER_SETTINGS_KEY, newSettings);
+      set({ reminderSettings: newSettings });
+      toast.success('提醒设置已保存');
+    } catch (e) {
+      if (e instanceof StorageQuotaExceededError) {
+        toast.error('存储空间不足，保存失败');
+      } else {
+        toast.error('保存失败，请重试');
+      }
+    }
+  },
+
+  getReminderSettings: () => {
+    return get().reminderSettings;
+  },
+
+  markReminderTriggered: () => {
+    const { reminderSettings } = get();
+    const newSettings = {
+      ...reminderSettings,
+      lastTriggeredAt: new Date().toISOString(),
+    };
+    try {
+      saveToStorage(REMINDER_SETTINGS_KEY, newSettings);
+      set({ reminderSettings: newSettings });
+    } catch {
+      set({ reminderSettings: newSettings });
+    }
   },
 }));

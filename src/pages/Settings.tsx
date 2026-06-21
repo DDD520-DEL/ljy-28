@@ -10,9 +10,11 @@ import {
   Package,
   Leaf,
   Printer,
+  Bell,
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useBoxStore } from '@/store/useBoxStore';
+import { useReminder } from '@/hooks/useReminder';
 import { toast } from '@/components/Toast';
 import { cn } from '@/lib/utils';
 import ExportDialog from '@/components/ExportDialog';
@@ -24,7 +26,8 @@ const ECO_SLOGAN = '🌿 每一个纸箱的重生，都是对地球的一份温�
 export default function Settings() {
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
-  const { clearAllData, records, favorites } = useBoxStore();
+  const { clearAllData, records, favorites, reminderSettings } = useBoxStore();
+  const { getNextReminderText } = useReminder();
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -108,6 +111,36 @@ export default function Settings() {
                 </span>
               </button>
             </div>
+          </section>
+
+          <section className="card-paper p-6 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+            <button
+              onClick={() => navigate('/reminder-settings')}
+              className="w-full flex items-center justify-between py-2 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-kraft-50 dark:bg-kraft-900/30 flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-kraft-500" />
+                </span>
+                <div>
+                  <p className="font-medium text-kraft-700 dark:text-kraft-200">提醒设置</p>
+                  <p className="text-sm text-kraft-500 mt-0.5">
+                    {getNextReminderText()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-full font-medium",
+                  reminderSettings.enabled
+                    ? "bg-forest-50 text-forest-600 dark:bg-forest-900/30 dark:text-forest-400"
+                    : "bg-kraft-100 text-kraft-500 dark:bg-kraft-800 dark:text-kraft-400"
+                )}>
+                  {reminderSettings.enabled ? "已开启" : "未开启"}
+                </span>
+                <span className="text-kraft-400 dark:text-kraft-500">›</span>
+              </div>
+            </button>
           </section>
 
           <section className="card-paper p-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>

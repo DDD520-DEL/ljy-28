@@ -9,13 +9,20 @@ import Onboarding from "@/pages/Onboarding";
 import BoxSizeRecommender from "@/pages/BoxSizeRecommender";
 import Achievements from "@/pages/Achievements";
 import ExportPrintPage from "@/pages/ExportPrintPage";
+import ReminderSettings from "@/pages/ReminderSettings";
 import { ToastContainer } from "@/components/Toast";
 import BottomNav from "@/components/BottomNav";
 import { useTheme } from "@/hooks/useTheme";
+import { useReminder } from "@/hooks/useReminder";
 import { loadFromStorage, ONBOARDING_SHOWN_KEY } from "@/utils/storage";
 
 function ThemeInitializer() {
   useTheme();
+  return null;
+}
+
+function ReminderInitializer() {
+  useReminder();
   return null;
 }
 
@@ -50,7 +57,7 @@ function OnboardingChecker() {
 
 function AppContent() {
   const location = useLocation();
-  const showBottomNav = location.pathname !== '/onboarding' && location.pathname !== '/export';
+  const showBottomNav = location.pathname !== '/onboarding' && location.pathname !== '/export' && location.pathname !== '/reminder-settings';
 
   return (
     <>
@@ -65,6 +72,7 @@ function AppContent() {
         <Route path="/record/:id" element={<Record />} />
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/reminder-settings" element={<ReminderSettings />} />
         <Route path="/export" element={<ExportPrintPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -77,6 +85,7 @@ export default function App() {
   return (
     <Router>
       <ThemeInitializer />
+      <ReminderInitializer />
       <OnboardingChecker />
       <AppContent />
     </Router>

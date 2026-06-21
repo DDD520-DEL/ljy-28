@@ -137,3 +137,12 @@ export interface BadgeStatus {
   progress: number;
   target: number;
 }
+
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export interface ReminderSettings {
+  enabled: boolean;
+  weekdays: Weekday[];
+  time: string;
+  lastTriggeredAt: string | null;
+}

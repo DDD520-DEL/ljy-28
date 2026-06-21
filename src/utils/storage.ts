@@ -6,6 +6,7 @@ const CURRENT_USER_NAME_KEY = 'box_creative_log_user_name';
 const VERSIONS_STORAGE_KEY = 'box_creative_log_versions';
 const ONBOARDING_SHOWN_KEY = 'box_creative_log_onboarding_shown';
 const EXPORT_DATA_KEY = 'box_creative_log_export_data';
+const REMINDER_SETTINGS_KEY = 'box_creative_log_reminder_settings';
 
 export class StorageQuotaExceededError extends Error {
   constructor(message: string) {
@@ -188,4 +189,4 @@ export function removeFromSessionStorage(key: string): void {
   }
 }
 
-export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY, VERSIONS_STORAGE_KEY, ONBOARDING_SHOWN_KEY, EXPORT_DATA_KEY };
+export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY, VERSIONS_STORAGE_KEY, ONBOARDING_SHOWN_KEY, EXPORT_DATA_KEY, REMINDER_SETTINGS_KEY };
