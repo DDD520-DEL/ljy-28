@@ -4,6 +4,8 @@ import { CATEGORIES } from '@/constants';
 import type { CategoryType, BoxRecord } from '@/types';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { saveToSessionStorage, EXPORT_DATA_KEY, StorageQuotaExceededError } from '@/utils/storage';
+import { toast } from '@/components/Toast';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -57,16 +59,26 @@ export default function ExportDialog({ isOpen, onClose, records }: ExportDialogP
       ? records
       : records.filter(r => selectedCategories.has(r.category));
     
-    const exportData = encodeURIComponent(JSON.stringify({
+    const exportData = {
       records: filteredRecords,
       exportedAt: new Date().toISOString(),
       categories: Array.from(selectedCategories),
-    }));
+    };
     
     setTimeout(() => {
-      setIsExporting(false);
-      onClose();
-      navigate(`/export?data=${exportData}`);
+      try {
+        saveToSessionStorage(EXPORT_DATA_KEY, exportData);
+        setIsExporting(false);
+        onClose();
+        navigate('/export');
+      } catch (e) {
+        setIsExporting(false);
+        if (e instanceof StorageQuotaExceededError) {
+          toast.error(e.message);
+        } else {
+          toast.error('导出数据失败，请重试');
+        }
+      }
     }, 500);
   };
 

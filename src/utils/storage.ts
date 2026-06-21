@@ -5,6 +5,7 @@ const CURRENT_USER_ID_KEY = 'box_creative_log_user_id';
 const CURRENT_USER_NAME_KEY = 'box_creative_log_user_name';
 const VERSIONS_STORAGE_KEY = 'box_creative_log_versions';
 const ONBOARDING_SHOWN_KEY = 'box_creative_log_onboarding_shown';
+const EXPORT_DATA_KEY = 'box_creative_log_export_data';
 
 export class StorageQuotaExceededError extends Error {
   constructor(message: string) {
@@ -150,4 +151,41 @@ export function checkStorageSpace(additionalBytes: number): {
   return { canSave, availableBytes, message };
 }
 
-export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY, VERSIONS_STORAGE_KEY, ONBOARDING_SHOWN_KEY };
+export function saveToSessionStorage<T>(key: string, data: T): boolean {
+  try {
+    const serialized = JSON.stringify(data);
+    sessionStorage.setItem(key, serialized);
+    return true;
+  } catch (e) {
+    if (e instanceof DOMException) {
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        throw new StorageQuotaExceededError(
+          '存储空间不足，请删除一些旧记录或压缩图片后再试'
+        );
+      }
+    }
+    console.error('保存到会话存储失败:', e);
+    throw e;
+  }
+}
+
+export function loadFromSessionStorage<T>(key: string, defaultValue: T): T {
+  try {
+    const item = sessionStorage.getItem(key);
+    if (item === null) return defaultValue;
+    return JSON.parse(item) as T;
+  } catch (e) {
+    console.error('从会话存储读取失败:', e);
+    return defaultValue;
+  }
+}
+
+export function removeFromSessionStorage(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch (e) {
+    console.error('删除会话存储失败:', e);
+  }
+}
+
+export { STORAGE_KEY, FAVORITES_STORAGE_KEY, LIKED_STORAGE_KEY, CURRENT_USER_ID_KEY, CURRENT_USER_NAME_KEY, VERSIONS_STORAGE_KEY, ONBOARDING_SHOWN_KEY, EXPORT_DATA_KEY };

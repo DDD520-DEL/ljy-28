@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer, Package, Leaf } from 'lucide-react';
 import { CATEGORY_LABELS, COMPLETENESS_LABELS, DIFFICULTY_LABELS, DIFFICULTY_ICONS } from '@/constants';
 import type { BoxRecord, CategoryType } from '@/types';
 import { toast } from '@/components/Toast';
+import { loadFromSessionStorage, removeFromSessionStorage, EXPORT_DATA_KEY } from '@/utils/storage';
 
 interface ExportData {
   records: BoxRecord[];
@@ -16,27 +17,30 @@ const ECO_SLOGAN = '🌿 每一个纸箱的重生，都是对地球的一份温�
 
 export default function ExportPrintPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [exportData, setExportData] = useState<ExportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const dataParam = searchParams.get('data');
-    if (dataParam) {
+    const loadData = () => {
       try {
-        const decoded = decodeURIComponent(dataParam);
-        const parsed = JSON.parse(decoded) as ExportData;
-        setExportData(parsed);
+        const data = loadFromSessionStorage<ExportData | null>(EXPORT_DATA_KEY, null);
+        if (data) {
+          setExportData(data);
+          removeFromSessionStorage(EXPORT_DATA_KEY);
+        } else {
+          toast.error('未找到导出数据，请重新导出');
+          navigate('/settings');
+        }
       } catch {
-        toast.error('导出数据解析失败，请重试');
+        toast.error('导出数据加载失败，请重试');
         navigate('/settings');
       }
-    } else {
-      toast.error('未找到导出数据');
-      navigate('/settings');
-    }
-    setIsLoading(false);
-  }, [searchParams, navigate]);
+      setIsLoading(false);
+    };
+
+    const timer = setTimeout(loadData, 100);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
