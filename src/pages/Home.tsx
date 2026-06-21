@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench, Trophy, Bell } from 'lucide-react';
+import { Package, Recycle, Sparkles, Plus, Star, Search, X, Settings2, Trash2, CheckSquare, Square, AlertTriangle, ChevronDown, Award, Settings, Wrench, Trophy, Bell, Calendar } from 'lucide-react';
 import { useReminder } from '@/hooks/useReminder';
 import { useBoxStore } from '@/store/useBoxStore';
 import { useAchievements } from '@/hooks/useAchievements';
@@ -152,6 +152,13 @@ export default function Home() {
         
         <div className="relative container py-12 md:py-16">
           <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 z-10">
+            <button
+              onClick={() => navigate('/calendar')}
+              className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-paper-white/80 backdrop-blur-sm border border-kraft-200 text-kraft-600 hover:text-kraft-800 hover:bg-paper-white hover:border-kraft-300 hover:shadow-paper transition-all duration-200 dark:bg-white/5 dark:border-kraft-700 dark:text-kraft-400 dark:hover:bg-white/10 dark:hover:text-kraft-200"
+              title="日历视图"
+            >
+              <Calendar className="w-5 h-5" />
+            </button>
             <button
               onClick={() => navigate('/box-size-recommender')}
               className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-paper-white/80 backdrop-blur-sm border border-kraft-200 text-kraft-600 hover:text-kraft-800 hover:bg-paper-white hover:border-kraft-300 hover:shadow-paper transition-all duration-200 dark:bg-white/5 dark:border-kraft-700 dark:text-kraft-400 dark:hover:bg-white/10 dark:hover:text-kraft-200"
